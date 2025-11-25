@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '../../../../lib/supabaseClient';
+import { supabase } from '@/lib/supabaseClient';
 
 export async function POST(request: Request) {
   const { first_name, email, phone, current_balance, gate_access_code, is_locked_out } = await request.json();
@@ -16,7 +16,8 @@ export async function POST(request: Request) {
       phone,
       current_balance: current_balance || 0,
       gate_access_code,
-      is_locked_out: is_locked_out || false
+      // Auto-lock if created with a balance, otherwise respect the form input
+      is_locked_out: (current_balance || 0) > 0 ? true : (is_locked_out || false)
     }])
     .select();
 

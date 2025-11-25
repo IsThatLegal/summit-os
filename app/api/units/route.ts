@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '../../../../lib/supabaseClient';
+import { supabase } from '@/lib/supabaseClient';
 
 export async function POST(request: Request) {
   const { unit_number, size, monthly_price, status, door_type } = await request.json();

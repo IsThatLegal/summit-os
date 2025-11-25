@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '../../../../lib/supabaseClient';
+import { supabase } from '@/lib/supabaseClient';
 
 export async function POST(request: Request) {
   const { gate_access_code } = await request.json();
@@ -27,11 +27,11 @@ export async function POST(request: Request) {
 
   if (isBalanceClear && !isLockedOut) {
     // Log the successful entry
-    await supabase.from('gate_logs').insert({ tenant_id: tenant.id, action: 'entry' });
+    await supabase.from('gate_logs').insert({ tenant_id: tenant.id, action: 'entry_granted' });
     return NextResponse.json({ access: 'granted' });
   } else {
     // Log the denied entry
-    await supabase.from('gate_logs').insert({ tenant_id: tenant.id, action: 'denied_payment' });
+    await supabase.from('gate_logs').insert({ tenant_id: tenant.id, action: 'entry_denied' });
     
     let reason = 'Access denied.';
     if (isLockedOut) {
