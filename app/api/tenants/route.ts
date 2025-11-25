@@ -1,0 +1,29 @@
+import { NextResponse } from 'next/server';
+import { supabase } from '../../../../lib/supabaseClient';
+
+export async function POST(request: Request) {
+  const { first_name, email, phone, current_balance, gate_access_code, is_locked_out } = await request.json();
+
+  if (!first_name || !email || !phone || !gate_access_code) {
+    return NextResponse.json({ error: 'Missing required fields: first_name, email, phone, gate_access_code' }, { status: 400 });
+  }
+
+  const { data, error } = await supabase
+    .from('tenants')
+    .insert([{
+      first_name,
+      email,
+      phone,
+      current_balance: current_balance || 0,
+      gate_access_code,
+      is_locked_out: is_locked_out || false
+    }])
+    .select();
+
+  if (error) {
+    console.error('Error adding tenant:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json(data[0], { status: 201 });
+}
