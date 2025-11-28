@@ -1,14 +1,20 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabaseClient';
+import { getSupabase } from '@/lib/supabaseClient';
 import Stripe from 'stripe';
 
-// Initialize Stripe with the secret key from environment variables
-// The '!' asserts that the environment variable will be present.
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-06-20',
-});
+// Initialize Stripe with better error handling
+let stripe: Stripe;
+try {
+  stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_123', {
+    apiVersion: '2025-11-17.clover'
+  });
+} catch (error) {
+  console.error('Failed to initialize Stripe:', error);
+  throw new Error('Stripe initialization failed');
+}
 
 export async function POST(request: Request) {
+  const supabase = getSupabase();
   const { tenant_id, amount_in_cents, description } = await request.json();
 
   // Validate required fields
@@ -17,30 +23,34 @@ export async function POST(request: Request) {
   }
 
   try {
-    // Step 1: Create and confirm a Stripe PaymentIntent.
-    // For testing, we use a hardcoded PaymentMethod that simulates a successful Visa payment.
+    // Validate tenant_id format first
+    if (!tenant_id || typeof tenant_id !== 'string') {
+      return NextResponse.json({ error: 'Invalid tenant_id format' }, { status: 400 });
+    }
+
+    // For testing, use a simpler approach that works with test mode
     const paymentIntent = await stripe.paymentIntents.create({
       amount: amount_in_cents,
       currency: 'usd',
-      payment_method: 'pm_card_visa', // Test payment method for Visa
       confirm: true,
+      payment_method: 'pm_card_visa',
+      description: `Test payment for tenant ${tenant_id}: ${description}`,
       automatic_payment_methods: {
         enabled: true,
-        allow_redirects: 'never',
-      },
-      description: `Charge for tenant ${tenant_id}: ${description}`,
+        allow_redirects: 'never'
+      }
     });
 
-    // Check if the payment was successful
+    // Check if payment was successful
     if (paymentIntent.status === 'succeeded') {
       // Step 2: CRITICAL - If Stripe charge succeeds, log it to our database.
-      // We log payments as a negative amount to correctly decrease the tenant's balance.
+      // We log payments as a negative amount to correctly decrease tenant's balance.
       const transactionAmount = -Math.abs(amount_in_cents);
 
       const { data: transaction, error: supabaseError } = await supabase
         .from('transactions')
         .insert({
-          tenant_id: tenant_id,
+          tenant_id,
           type: 'payment',
           amount: transactionAmount,
           description: description,
@@ -50,14 +60,14 @@ export async function POST(request: Request) {
         .single();
 
       if (supabaseError) {
-        // If the database insert fails, this is a critical issue.
+        // If database insert fails, this is a critical issue.
         console.error(`CRITICAL: Stripe payment ${paymentIntent.id} succeeded but failed to log to Supabase.`, supabaseError);
         // Optionally, you could try to refund the payment here.
         return NextResponse.json({ error: 'Payment succeeded but failed to record transaction.' }, { status: 500 });
       }
 
       // Step 3: Check new balance and auto-unlock if applicable.
-      // The trigger updated the balance, so we re-fetch the tenant to get the new balance.
+      // The trigger updated balance, so we re-fetch tenant to get the new balance.
       const { data: updatedTenant } = await supabase
         .from('tenants')
         .select('current_balance')
@@ -72,14 +82,14 @@ export async function POST(request: Request) {
           .eq('id', tenant_id);
         
         if (unlockError) {
-          // Log this as a non-critical error, as the payment still succeeded.
+          // Log this as a non-critical error, as payment still succeeded.
           console.error(`Error auto-unlocking tenant ${tenant_id}:`, unlockError);
         } else {
           unlocked = true;
         }
       }
 
-      // Return a success response with the created transaction details.
+      // Return a success response with created transaction details.
       return NextResponse.json({
         message: 'Charge successful and transaction logged.',
         stripe_payment_id: paymentIntent.id,
@@ -88,12 +98,14 @@ export async function POST(request: Request) {
       }, { status: 201 });
 
     } else {
-      // If the PaymentIntent has a different status (e.g., 'requires_action')
+      // If PaymentIntent has a different status (e.g., 'requires_action')
       return NextResponse.json({ error: 'Payment did not succeed.', status: paymentIntent.status }, { status: 400 });
     }
 
   } catch (error: any) {
     console.error('Stripe API error:', error);
+    console.error('Stripe error type:', error.type);
+    console.error('Stripe error code:', error.code);
     // Return a generic error response
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

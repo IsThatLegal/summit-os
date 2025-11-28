@@ -28,10 +28,13 @@ export default function GateSimulatorPage() {
       });
 
       const data = await response.json();
+
+      // Set the result whether it's a success or failure, to display the reason
       setAccessResult(data);
 
       if (!response.ok) {
-        throw new Error(data.error || 'Gate access request failed.');
+        // Use the reason from the API response for the error state
+        throw new Error(data.reason || 'Gate access request failed.');
       }
     } catch (err: any) {
       console.error('Error opening gate:', err);

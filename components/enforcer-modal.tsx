@@ -8,12 +8,15 @@ interface EnforcerModalProps {
   onClose: () => void;
   tenantId: string | null;
   tenantName: string | null;
+  // New prop: tenantPhone to send the SMS
+  tenantPhone: string | null;
 }
 
-export const EnforcerModal: React.FC<EnforcerModalProps> = ({ isOpen, onClose, tenantId, tenantName }) => {
+export const EnforcerModal: React.FC<EnforcerModalProps> = ({ isOpen, onClose, tenantId, tenantName, tenantPhone }) => {
   const [loading, setLoading] = useState(true);
   const [draftMessage, setDraftMessage] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
+  const [sending, setSending] = useState(false); // New state for sending message
 
   // Effect to fetch the draft message when the modal opens
   useEffect(() => {
@@ -57,9 +60,36 @@ export const EnforcerModal: React.FC<EnforcerModalProps> = ({ isOpen, onClose, t
     return null;
   }
 
-  const handleSendSms = () => {
-    alert(`Simulating SMS Sent to ${tenantName}:\n\n"${draftMessage}"`);
-    onClose(); // Close modal after action
+  const handleSendSms = async () => {
+    if (!draftMessage || !tenantId || !tenantPhone) {
+      setError("Cannot send empty message or missing tenant info.");
+      return;
+    }
+    setSending(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/communications/send-sms', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ tenantId, phoneNumber: tenantPhone, message: draftMessage }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to send SMS.');
+      }
+      alert(data.message); // Show mock success message
+      onClose(); // Close modal after action
+    } catch (err: any) {
+      console.error('Error sending SMS:', err);
+      setError(err.message || 'An unexpected error occurred while sending SMS.');
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -116,10 +146,10 @@ export const EnforcerModal: React.FC<EnforcerModalProps> = ({ isOpen, onClose, t
           </button>
           <button
             onClick={handleSendSms}
-            disabled={loading || !!error || !draftMessage}
+            disabled={loading || sending || !!error || !draftMessage}
             className="inline-flex items-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Send SMS
+            {sending ? 'Sending...' : 'Send SMS'}
           </button>
         </div>
       </div>

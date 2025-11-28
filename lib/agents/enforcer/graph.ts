@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabaseClient';
+import { getSupabase } from '@/lib/supabaseClient';
 import { ChatOpenAI } from '@langchain/openai';
 import { StateGraph, END } from '@langchain/langgraph';
 
@@ -31,6 +31,7 @@ const initialState: EnforcerState = {
  */
 async function fetchData(state: EnforcerState) {
   console.log("--- NODE: fetchData ---");
+  const supabase = getSupabase();
   const { tenantId } = state;
 
   const { data, error } = await supabase

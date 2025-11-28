@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabaseClient';
+import { getSupabase } from '@/lib/supabaseClient';
 
 export async function POST(request: Request) {
+  const supabase = getSupabase();
   const { unit_number, size, monthly_price, status, door_type } = await request.json();
 
   if (!unit_number || !size || !monthly_price || !status || !door_type) {

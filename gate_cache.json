@@ -1,0 +1,18 @@
+[
+  {
+    "gate_access_code": "9012",
+    "first_name": "Charlie"
+  },
+  {
+    "gate_access_code": "5678",
+    "first_name": "Bob"
+  },
+  {
+    "gate_access_code": "4564",
+    "first_name": "Bill"
+  },
+  {
+    "gate_access_code": "1234",
+    "first_name": "Alice"
+  }
+]

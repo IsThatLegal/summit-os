@@ -1,7 +1,16 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabaseClient';
+import { getSupabase } from '@/lib/supabaseClient';
 
 export async function POST(request: Request) {
+  const supabase = getSupabase();
+  // API Key Authentication
+  const authHeader = request.headers.get('Authorization');
+  const expectedToken = `Bearer ${process.env.GATE_API_SECRET}`;
+
+  if (authHeader !== expectedToken) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   const { license_plate } = await request.json();
 
   if (!license_plate) {

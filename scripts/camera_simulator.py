@@ -1,7 +1,17 @@
 import requests
 import time
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from the .env file in the parent directory
+dotenv_path = os.path.join(os.path.dirname(__file__), '..', '.env')
+load_dotenv(dotenv_path=dotenv_path)
 
 API_URL = "http://localhost:3000/api/gate/identify"
+API_SECRET = os.environ.get("GATE_API_SECRET")
+
+if not API_SECRET:
+    raise ValueError("GATE_API_SECRET not found in .env file.")
 
 def main():
     """
@@ -10,6 +20,11 @@ def main():
     """
     print("📷 LPR CAMERA SIMULATOR [ONLINE]")
     print("-" * 35)
+    
+    headers = {
+        'Authorization': f'Bearer {API_SECRET}',
+        'Content-Type': 'application/json',
+    }
     
     while True:
         try:
@@ -24,7 +39,7 @@ def main():
             print(f"🔬 Identifying '{plate}'...")
             
             start_time = time.time()
-            response = requests.post(API_URL, json={"license_plate": plate})
+            response = requests.post(API_URL, headers=headers, json={"license_plate": plate})
             end_time = time.time()
 
             response_time = (end_time - start_time) * 1000

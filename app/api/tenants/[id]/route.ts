@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabaseClient';
+import { getSupabase } from '@/lib/supabaseClient';
 
 export async function DELETE(request: Request, context: { params: any }) {
+  const supabase = getSupabase();
   // This is an unconventional fix based on the specific error message from this Next.js version.
   const params = await context.params;
   const id = params.id;
