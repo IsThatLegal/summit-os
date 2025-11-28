@@ -2,6 +2,17 @@
 
 A comprehensive property management system for automated gate access control, tenant management, and payment processing.
 
+## 🚨 **SECURITY WARNING**
+
+**⚠️ NOT PRODUCTION READY** - SummitOS currently has critical security vulnerabilities:
+
+- 🔴 **Hardcoded API keys** and secrets
+- 🔴 **No database authentication** - completely open
+- 🔴 **Missing API authentication** - all endpoints unprotected
+- 🔴 **No input validation** - vulnerable to attacks
+
+**See [SECURITY_PLAN.md](./SECURITY_PLAN.md) for comprehensive security roadmap.**
+
 ## 🚀 Features
 
 - **Tenant Management**: Complete CRUD operations for tenant data
