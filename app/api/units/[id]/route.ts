@@ -7,6 +7,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+  console.log('Updating unit with ID:', id);
   const supabase = getSupabase();
   
   try {
