@@ -48,7 +48,7 @@ export async function PATCH(
     const { data, error } = await supabase
       .from('units')
       .update(updateData)
-      .eq('id', params.id)
+      .eq('id', id)
       .select()
       .single();
 
@@ -67,8 +67,9 @@ export async function PATCH(
 // DELETE unit by ID
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const supabase = getSupabase();
   
   try {
@@ -76,7 +77,7 @@ export async function DELETE(
     const { data: unit } = await supabase
       .from('units')
       .select('tenant_id')
-      .eq('id', params.id)
+      .eq('id', id)
       .single();
 
     if (unit?.tenant_id) {
@@ -88,7 +89,7 @@ export async function DELETE(
     const { error } = await supabase
       .from('units')
       .delete()
-      .eq('id', params.id);
+      .eq('id', id);
 
     if (error) {
       console.error('Error deleting unit:', error);
