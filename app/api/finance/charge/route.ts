@@ -1,32 +1,54 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { getSupabase } from '@/lib/supabaseClient';
+import { withAuth, addSecurityHeaders } from '@/lib/auth';
+import { rateLimits } from '@/lib/rateLimit';
 import Stripe from 'stripe';
+import { z } from 'zod';
 
-// Initialize Stripe with better error handling
-let stripe: Stripe;
-try {
-  stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_123', {
-    apiVersion: '2025-11-17.clover'
-  });
-} catch (error) {
-  console.error('Failed to initialize Stripe:', error);
-  throw new Error('Stripe initialization failed');
+// Input validation schema
+const chargeSchema = z.object({
+  tenant_id: z.string().uuid('Invalid tenant_id format'),
+  amount_in_cents: z.number().int().positive('Amount must be a positive integer'),
+  description: z.string().min(1, 'Description is required').max(500, 'Description too long')
+});
+
+// Initialize Stripe with secure environment variable handling
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+
+if (!stripeSecretKey) {
+  throw new Error('STRIPE_SECRET_KEY environment variable is not set');
 }
 
-export async function POST(request: Request) {
-  const supabase = getSupabase();
-  const { tenant_id, amount_in_cents, description } = await request.json();
+// Validate Stripe key format
+if (!stripeSecretKey.startsWith('sk_test_') && !stripeSecretKey.startsWith('sk_live_')) {
+  throw new Error('Invalid STRIPE_SECRET_KEY format');
+}
 
-  // Validate required fields
-  if (!tenant_id || !amount_in_cents || !description) {
-    return NextResponse.json({ error: 'Missing required fields: tenant_id, amount_in_cents, description' }, { status: 400 });
+const stripe = new Stripe(stripeSecretKey, {
+  apiVersion: '2025-11-17.clover'
+});
+
+export async function POST(request: NextRequest) {
+  // Apply rate limiting
+  const rateLimitResponse = rateLimits.payments(request);
+  if (rateLimitResponse) {
+    return addSecurityHeaders(rateLimitResponse);
+  }
+
+  // Authenticate and authorize user
+  const auth = await withAuth(request, ['PROPERTY_ADMIN', 'FINANCE_ADMIN', 'SUPER_ADMIN']);
+  if (auth.response) {
+    return addSecurityHeaders(auth.response);
   }
 
   try {
-    // Validate tenant_id format first
-    if (!tenant_id || typeof tenant_id !== 'string') {
-      return NextResponse.json({ error: 'Invalid tenant_id format' }, { status: 400 });
-    }
+    const body = await request.json();
+    
+    // Validate input using Zod schema
+    const validatedData = chargeSchema.parse(body);
+    const { tenant_id, amount_in_cents, description } = validatedData;
+    
+    const supabase = getSupabase();
 
     // For testing, use a simpler approach that works with test mode
     const paymentIntent = await stripe.paymentIntents.create({
@@ -63,7 +85,7 @@ export async function POST(request: Request) {
         // If database insert fails, this is a critical issue.
         console.error(`CRITICAL: Stripe payment ${paymentIntent.id} succeeded but failed to log to Supabase.`, supabaseError);
         // Optionally, you could try to refund the payment here.
-        return NextResponse.json({ error: 'Payment succeeded but failed to record transaction.' }, { status: 500 });
+        return addSecurityHeaders(NextResponse.json({ error: 'Payment succeeded but failed to record transaction.' }, { status: 500 }));
       }
 
       // Step 3: Check new balance and auto-unlock if applicable.
@@ -73,6 +95,8 @@ export async function POST(request: Request) {
         .select('current_balance')
         .eq('id', tenant_id)
         .single();
+      
+      console.log('Updated tenant for auto-unlock check:', updatedTenant);
       
       let unlocked = false;
       if (updatedTenant && updatedTenant.current_balance <= 0) {
@@ -90,23 +114,31 @@ export async function POST(request: Request) {
       }
 
       // Return a success response with created transaction details.
-      return NextResponse.json({
+      return addSecurityHeaders(NextResponse.json({
         message: 'Charge successful and transaction logged.',
         stripe_payment_id: paymentIntent.id,
         transaction: transaction,
         unlocked: unlocked
-      }, { status: 201 });
+      }, { status: 201 }));
 
     } else {
       // If PaymentIntent has a different status (e.g., 'requires_action')
-      return NextResponse.json({ error: 'Payment did not succeed.', status: paymentIntent.status }, { status: 400 });
+      return addSecurityHeaders(NextResponse.json({ error: 'Payment did not succeed.', status: paymentIntent.status }, { status: 400 }));
     }
 
   } catch (error: any) {
+    // Handle Zod validation errors
+    if (error instanceof z.ZodError) {
+      return addSecurityHeaders(NextResponse.json({ 
+        error: 'Validation failed', 
+        details: error.issues 
+      }, { status: 400 }));
+    }
+    
     console.error('Stripe API error:', error);
     console.error('Stripe error type:', error.type);
     console.error('Stripe error code:', error.code);
     // Return a generic error response
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return addSecurityHeaders(NextResponse.json({ error: error.message }, { status: 500 }));
   }
 }

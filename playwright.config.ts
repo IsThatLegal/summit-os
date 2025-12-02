@@ -5,6 +5,9 @@ import path from 'path';
 // Read from .env.local file at the root of the project
 dotenv.config({ path: path.resolve(__dirname, '.env.local') });
 
+// Global setup file for test cleanup
+const globalSetup = require.resolve('./e2e/global-setup.ts');
+
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
@@ -12,6 +15,7 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
   reporter: 'html',
+  globalSetup,
   use: {
     baseURL: 'http://localhost:3000',
     trace: 'on-first-retry',

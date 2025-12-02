@@ -9,7 +9,9 @@
     "lint": "eslint",
     "test": "jest",
     "test:e2e": "playwright test",
-    "test:agent": "tsx scripts/test-enforcer.ts"
+    "test:agent": "tsx scripts/test-enforcer.ts",
+    "cleanup:tests": "./scripts/cleanup-tests.sh",
+    "cleanup:nuke": "curl -X DELETE http://localhost:3000/api/cleanup/scorched"
   },
   "dependencies": {
     "@langchain/core": "^1.1.0",
