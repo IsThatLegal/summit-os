@@ -35,7 +35,7 @@ async function main() {
 
     // 2. Execution: Run the enforcerAgent with the new tenantId
     console.log("\nInvoking The Enforcer agent...");
-    const finalState = await enforcerAgent.invoke({ tenantId: testTenantId });
+    const finalState = await enforcerAgent(testTenantId!);
 
     // 3. Output: Log the final state, specifically the draftMessage
     console.log("\n--- Agent Run Complete ---");
