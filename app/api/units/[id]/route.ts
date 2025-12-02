@@ -4,8 +4,9 @@ import { getSupabase } from '@/lib/supabaseClient';
 // PATCH unit by ID
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const supabase = getSupabase();
   
   try {
