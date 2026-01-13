@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
-import { Plus, Edit2, Trash2, MapPin, Grid3X3, Moon, Sun } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Plus, Edit2, Trash2, MapPin, Grid3X3 } from 'lucide-react';
 import { useTheme } from '@/components/theme-provider';
 
 interface Unit {
@@ -22,7 +22,7 @@ interface Unit {
 }
 
 export default function UnitMapBuilder() {
-  const { theme, toggleTheme } = useTheme();
+  const { theme } = useTheme();
   const [units, setUnits] = useState<Unit[]>([]);
   const [selectedUnit, setSelectedUnit] = useState<Unit | null>(null);
   const [isCreating, setIsCreating] = useState(false);
@@ -32,7 +32,6 @@ export default function UnitMapBuilder() {
   const [draggedUnit, setDraggedUnit] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [selectedUnits, setSelectedUnits] = useState<Set<string>>(new Set());
-  const [isDraggingMultiple, setIsDraggingMultiple] = useState(false);
   const mapRef = useRef<HTMLDivElement>(null);
 
   const [newUnit, setNewUnit] = useState<Partial<Unit>>({
@@ -237,15 +236,15 @@ export default function UnitMapBuilder() {
     await updateUnit(updatedUnit);
   };
 
-  const rotateSelectedUnits = async (direction: 'left' | 'right') => {
+  const rotateSelectedUnits = useCallback(async (direction: 'left' | 'right') => {
     for (const unitId of selectedUnits) {
       await rotateUnit(unitId, direction);
     }
-  };
+  }, [selectedUnits, rotateUnit]);
 
-  const deleteSelectedUnits = async () => {
+  const deleteSelectedUnits = useCallback(async () => {
     if (selectedUnits.size === 0) return;
-    
+
     const count = selectedUnits.size;
     if (!window.confirm(`Are you sure you want to delete ${count} unit${count > 1 ? 's' : ''}?`)) return;
 
@@ -254,8 +253,10 @@ export default function UnitMapBuilder() {
     }
     setSelectedUnits(new Set());
     setSelectedUnit(null);
-  };
+  }, [selectedUnits, deleteUnit]);
 
+  // Fetch units on mount
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     console.log('UnitMapBuilder component mounted');
     fetchUnits();
@@ -284,7 +285,7 @@ export default function UnitMapBuilder() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedUnits, units]);
+  }, [selectedUnits, units, deleteSelectedUnits, rotateSelectedUnits]);
 
   const getStatusColor = (status: string) => {
     switch (status) {

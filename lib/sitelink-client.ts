@@ -208,7 +208,7 @@ export class SiteLinkAPIClient {
   }
 
   // Site Information
-  async getSiteInfo(siteId?: string): Promise<any> {
+  async getSiteInfo(siteId?: string): Promise<Record<string, unknown>> {
     const endpoint = siteId ? `/api/sites/${siteId}` : '/api/sites';
     const response = await this.makeRequest(endpoint);
     return response.json();
@@ -244,23 +244,23 @@ export class SiteLinkAPIClient {
   }
 
   // Reports
-  async getOccupancyReport(siteId?: string, startDate?: string, endDate?: string): Promise<any> {
+  async getOccupancyReport(siteId?: string, startDate?: string, endDate?: string): Promise<Record<string, unknown>> {
     const params = new URLSearchParams();
     if (siteId) params.append('siteId', siteId);
     if (startDate) params.append('startDate', startDate);
     if (endDate) params.append('endDate', endDate);
-    
+
     const endpoint = `/api/reports/occupancy${params.toString() ? `?${params.toString()}` : ''}`;
     const response = await this.makeRequest(endpoint);
     return response.json();
   }
 
-  async getFinancialReport(siteId?: string, startDate?: string, endDate?: string): Promise<any> {
+  async getFinancialReport(siteId?: string, startDate?: string, endDate?: string): Promise<Record<string, unknown>> {
     const params = new URLSearchParams();
     if (siteId) params.append('siteId', siteId);
     if (startDate) params.append('startDate', startDate);
     if (endDate) params.append('endDate', endDate);
-    
+
     const endpoint = `/api/reports/financial${params.toString() ? `?${params.toString()}` : ''}`;
     const response = await this.makeRequest(endpoint);
     return response.json();
@@ -269,7 +269,7 @@ export class SiteLinkAPIClient {
 
 // Utility functions for data mapping
 export class SiteLinkDataMapper {
-  static mapUnitToSummitOS(sitelinkUnit: SiteLinkUnit): Omit<any, 'id'> {
+  static mapUnitToSummitOS(sitelinkUnit: SiteLinkUnit): Omit<Record<string, unknown>, 'id'> {
     return {
       unit_number: sitelinkUnit.UnitNumber,
       size: `${sitelinkUnit.Width}x${sitelinkUnit.Depth}`,
@@ -286,7 +286,7 @@ export class SiteLinkDataMapper {
     };
   }
 
-  static mapSummitOSToSiteLink(summitOSUnit: any): Omit<SiteLinkUnit, 'UnitID'> {
+  static mapSummitOSToSiteLink(summitOSUnit: Record<string, unknown>): Omit<SiteLinkUnit, 'UnitID'> {
     return {
       UnitNumber: summitOSUnit.unit_number,
       Width: summitOSUnit.width,
@@ -301,7 +301,7 @@ export class SiteLinkDataMapper {
     };
   }
 
-  static mapTenantToSummitOS(sitelinkTenant: SiteLinkTenant): Omit<any, 'id'> {
+  static mapTenantToSummitOS(sitelinkTenant: SiteLinkTenant): Omit<Record<string, unknown>, 'id'> {
     return {
       first_name: sitelinkTenant.FirstName,
       last_name: sitelinkTenant.LastName,
@@ -314,7 +314,7 @@ export class SiteLinkDataMapper {
     };
   }
 
-  static mapSummitOSToSiteLinkTenant(summitOSTenant: any): Omit<SiteLinkTenant, 'TenantID'> {
+  static mapSummitOSToSiteLinkTenant(summitOSTenant: Record<string, unknown>): Omit<SiteLinkTenant, 'TenantID'> {
     return {
       FirstName: summitOSTenant.first_name,
       LastName: summitOSTenant.last_name || '',
@@ -332,7 +332,7 @@ export class SiteLinkDataMapper {
     };
   }
 
-  static mapTransactionToSummitOS(sitelinkTransaction: SiteLinkTransaction): Omit<any, 'id'> {
+  static mapTransactionToSummitOS(sitelinkTransaction: SiteLinkTransaction): Omit<Record<string, unknown>, 'id'> {
     return {
       tenant_id: sitelinkTransaction.TenantID,
       amount: Math.round(sitelinkTransaction.Amount * 100), // Convert to cents
@@ -344,7 +344,7 @@ export class SiteLinkDataMapper {
     };
   }
 
-  static mapSummitOSToSiteLinkTransaction(summitOSTransaction: any): Omit<SiteLinkTransaction, 'TransactionID'> {
+  static mapSummitOSToSiteLinkTransaction(summitOSTransaction: Record<string, unknown>): Omit<SiteLinkTransaction, 'TransactionID'> {
     return {
       TenantID: summitOSTransaction.tenant_id,
       Amount: summitOSTransaction.amount / 100, // Convert from cents

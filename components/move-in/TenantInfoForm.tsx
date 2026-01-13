@@ -77,8 +77,8 @@ export default function TenantInfoForm({ onSubmit, onNext, initialData }: Tenant
     setIsValid(Object.keys(newErrors).length === 0);
   }, [formData]);
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData((prev: any) => ({ ...prev, [field]: value }));
+  const handleInputChange = (field: keyof TenantInfo, value: string) => {
+    setFormData((prev: TenantInfo) => ({ ...prev, [field]: value }));
   };
 
   const formatPhoneNumber = (value: string) => {
@@ -121,7 +121,7 @@ export default function TenantInfoForm({ onSubmit, onNext, initialData }: Tenant
       <div className="max-w-md mx-auto bg-white rounded-lg shadow-lg p-6">
         <div className="mb-6">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Tenant Information</h2>
-          <p className="text-gray-600">Please provide the tenant's details. This should take about 60 seconds.</p>
+          <p className="text-gray-600">Please provide the tenant&apos;s details. This should take about 60 seconds.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">

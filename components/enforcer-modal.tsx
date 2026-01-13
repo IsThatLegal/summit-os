@@ -45,9 +45,9 @@ export const EnforcerModal: React.FC<EnforcerModalProps> = ({ isOpen, onClose, t
         }
 
         setDraftMessage(data.draftMessage);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Error fetching AI draft:', err);
-        setError(err.message || 'An unexpected error occurred while drafting message.');
+        setError(err instanceof Error ? err.message : 'An unexpected error occurred while drafting message.');
       } finally {
         setLoading(false);
       }
@@ -84,9 +84,9 @@ export const EnforcerModal: React.FC<EnforcerModalProps> = ({ isOpen, onClose, t
       }
       alert(data.message); // Show mock success message
       onClose(); // Close modal after action
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error sending SMS:', err);
-      setError(err.message || 'An unexpected error occurred while sending SMS.');
+      setError(err instanceof Error ? err.message : 'An unexpected error occurred while sending SMS.');
     } finally {
       setSending(false);
     }

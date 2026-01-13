@@ -41,9 +41,23 @@ interface PricingBreakdown {
   savings: number;
 }
 
+interface Unit {
+  unitNumber: string;
+  size: number;
+  price: number;
+  basePrice?: number;
+}
+
+interface TenantInfo {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+}
+
 interface LeaseConfigProps {
-  unit: any;
-  tenantInfo: any;
+  unit: Unit;
+  tenantInfo: TenantInfo;
   onLeaseConfigure: (config: LeaseConfiguration) => void;
   onNext: () => void;
   onBack: () => void;
@@ -129,7 +143,10 @@ export default function LeaseConfiguration({ unit, tenantInfo, onLeaseConfigure,
     });
   }, [config, unit]);
 
-  const handleConfigChange = (field: keyof LeaseConfiguration, value: any) => {
+  const handleConfigChange = <K extends keyof LeaseConfiguration>(
+    field: K,
+    value: LeaseConfiguration[K]
+  ) => {
     setConfig((prev: LeaseConfiguration) => ({ ...prev, [field]: value }));
   };
 
@@ -249,7 +266,7 @@ export default function LeaseConfiguration({ unit, tenantInfo, onLeaseConfigure,
                 <select
                   id="billingCycle"
                   value={config.billingCycle}
-                  onChange={(e) => handleConfigChange('billingCycle', e.target.value)}
+                  onChange={(e) => handleConfigChange('billingCycle', e.target.value as 'monthly' | 'quarterly' | 'annual')}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="monthly">Monthly</option>

@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
         payment_method_id: null, // Will be linked when verified
         payment_status: 'pending',
         reference_number: money_order_number,
-        processed_by: auth.user.email,
+        processed_by: auth.user?.email || 'unknown',
         notes: `Money order from ${issuing_organization}`
       })
       .select()
@@ -115,18 +115,19 @@ export async function POST(request: NextRequest) {
       ]
     }));
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Handle Zod validation errors
     if (error instanceof z.ZodError) {
-      return addSecurityHeaders(NextResponse.json({ 
-        error: 'Validation failed', 
-        details: error.issues 
+      return addSecurityHeaders(NextResponse.json({
+        error: 'Validation failed',
+        details: error.issues
       }, { status: 400 }));
     }
-    
+
     console.error('Money order processing error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Money order processing failed';
     return addSecurityHeaders(NextResponse.json(
-      { error: error.message || 'Money order processing failed' },
+      { error: errorMessage },
       { status: 500 }
     ));
   }

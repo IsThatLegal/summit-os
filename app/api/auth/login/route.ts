@@ -108,15 +108,15 @@ export async function POST(request: NextRequest) {
       }
     }));
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Handle Zod validation errors
     if (error instanceof z.ZodError) {
-      return addSecurityHeaders(NextResponse.json({ 
-        error: 'Validation failed', 
-        details: error.issues 
+      return addSecurityHeaders(NextResponse.json({
+        error: 'Validation failed',
+        details: error.issues
       }, { status: 400 }));
     }
-    
+
     console.error('Login error:', error);
     return addSecurityHeaders(NextResponse.json(
       { error: 'Authentication failed' },

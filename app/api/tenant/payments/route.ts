@@ -131,18 +131,19 @@ export async function POST(request: NextRequest) {
       new_balance: updatedTenant?.current_balance || 0
     }));
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Handle Zod validation errors
     if (error instanceof z.ZodError) {
-      return addSecurityHeaders(NextResponse.json({ 
-        error: 'Validation failed', 
-        details: error.issues 
+      return addSecurityHeaders(NextResponse.json({
+        error: 'Validation failed',
+        details: error.issues
       }, { status: 400 }));
     }
-    
+
     console.error('Payment processing error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Payment processing failed';
     return addSecurityHeaders(NextResponse.json(
-      { error: error.message || 'Payment processing failed' },
+      { error: errorMessage },
       { status: 500 }
     ));
   }

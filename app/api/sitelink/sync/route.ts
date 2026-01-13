@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { siteLinkIntegration } from '@/lib/sitelink-integration';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const testResult = await siteLinkIntegration.testConnection();
     
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { action, data } = body;
+    const { action } = body;
 
     switch (action) {
       case 'sync-units':

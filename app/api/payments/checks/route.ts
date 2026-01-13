@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
         payment_method_id: null, // Will be linked when check clears
         payment_status: 'pending',
         reference_number: check_number,
-        processed_by: auth.user.email,
+        processed_by: auth.user?.email || 'unknown',
         notes: `Check payment via ${bank_name}`
       })
       .select()
@@ -120,18 +120,19 @@ export async function POST(request: NextRequest) {
       ]
     }));
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Handle Zod validation errors
     if (error instanceof z.ZodError) {
-      return addSecurityHeaders(NextResponse.json({ 
-        error: 'Validation failed', 
-        details: error.issues 
+      return addSecurityHeaders(NextResponse.json({
+        error: 'Validation failed',
+        details: error.issues
       }, { status: 400 }));
     }
-    
+
     console.error('Check payment processing error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Check payment processing failed';
     return addSecurityHeaders(NextResponse.json(
-      { error: error.message || 'Check payment processing failed' },
+      { error: errorMessage },
       { status: 500 }
     ));
   }

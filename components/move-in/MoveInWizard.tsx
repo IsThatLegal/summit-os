@@ -6,11 +6,72 @@ import UnitSelection from './UnitSelection';
 import LeaseConfiguration from './LeaseConfiguration';
 import PaymentProcessing from './PaymentProcessing';
 
+interface TenantInfo {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  id?: string;
+  gateAccessCode?: string;
+}
+
+interface Unit {
+  id: string;
+  unitNumber: string;
+  size: number;
+  type: string;
+  basePrice: number;
+  features: string[];
+  location: string;
+  isAvailable: boolean;
+  monthlyPrice?: number;
+}
+
+interface LeaseConfiguration {
+  leaseTerm: number;
+  startDate: string;
+  billingCycle: 'monthly' | 'quarterly' | 'annual';
+  autoRenewal: boolean;
+  insuranceRequired: boolean;
+  insuranceOptions: {
+    provider: string;
+    coverage: number;
+    monthlyCost: number;
+    deductible: number;
+  }[];
+  services: {
+    tenantProtection: boolean;
+    lateFeeProtection: boolean;
+    climateControl: boolean;
+    pestControl: boolean;
+    mailService: boolean;
+  };
+  discounts: {
+    military: boolean;
+    student: boolean;
+    senior: boolean;
+    corporate: boolean;
+    prepayment: boolean;
+    referral: boolean;
+  };
+}
+
+interface PaymentDetails {
+  paymentMethod: 'card' | 'bank' | 'crypto';
+  cardNumber?: string;
+  expiryDate?: string;
+  cvv?: string;
+  bankAccountNumber?: string;
+  routingNumber?: string;
+  cryptoAddress?: string;
+  amount?: number;
+}
+
 interface MoveInData {
-  tenantInfo: any;
-  selectedUnit: any;
-  leaseConfig: any;
-  pricing: any;
+  tenantInfo: TenantInfo | null;
+  selectedUnit: Unit | null;
+  leaseConfig: LeaseConfiguration | null;
+  pricing: PaymentDetails | null;
 }
 
 export default function MoveInWizard() {
@@ -24,7 +85,7 @@ export default function MoveInWizard() {
 
   const totalSteps = 4;
 
-  const handleTenantInfoSubmit = async (tenantInfo: any) => {
+  const handleTenantInfoSubmit = async (tenantInfo: TenantInfo) => {
     try {
       // Generate gate access code
       const gateAccessCode = Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -56,7 +117,7 @@ export default function MoveInWizard() {
     }
   };
 
-  const handleUnitSelect = async (selectedUnit: any) => {
+  const handleUnitSelect = async (selectedUnit: Unit) => {
     try {
       // Update unit status to occupied
       const response = await fetch('/api/units', {
@@ -65,14 +126,14 @@ export default function MoveInWizard() {
         body: JSON.stringify({
           unit_number: selectedUnit.unitNumber,
           size: selectedUnit.size,
-          monthly_price: selectedUnit.price,
+          monthly_price: selectedUnit.basePrice || selectedUnit.monthlyPrice,
           status: 'occupied',
           door_type: 'roll_up'
         })
       });
-      
+
       if (!response.ok) throw new Error('Failed to reserve unit');
-      
+
       const unitData = await response.json();
       setMoveInData((prev: MoveInData) => ({ ...prev, selectedUnit: { ...selectedUnit, id: unitData.id } }));
       setCurrentStep(3);
@@ -82,12 +143,12 @@ export default function MoveInWizard() {
     }
   };
 
-  const handleLeaseConfig = (leaseConfig: any) => {
+  const handleLeaseConfig = (leaseConfig: LeaseConfiguration) => {
     setMoveInData((prev: MoveInData) => ({ ...prev, leaseConfig }));
     setCurrentStep(4);
   };
 
-  const handlePaymentComplete = async (paymentDetails: any) => {
+  const handlePaymentComplete = async (paymentDetails: PaymentDetails) => {
     try {
       // Link tenant to unit
       if (moveInData.tenantInfo?.id && moveInData.selectedUnit?.id) {
@@ -102,7 +163,7 @@ export default function MoveInWizard() {
         if (!response.ok) throw new Error('Failed to link tenant to unit');
       }
       
-      setMoveInData((prev: MoveInData) => ({ ...prev, pricing: { paymentDetails } }));
+      setMoveInData((prev: MoveInData) => ({ ...prev, pricing: paymentDetails }));
       alert('Move-in complete! Welcome to SummitOS. Your gate access code is: ' + moveInData.tenantInfo?.gateAccessCode);
     } catch (error) {
       alert('Error completing move-in. Please contact support.');
@@ -176,26 +237,38 @@ export default function MoveInWizard() {
             onUnitSelect={handleUnitSelect}
             onNext={() => {}}
             onBack={handleBack}
-            selectedUnit={moveInData.selectedUnit}
+            selectedUnit={moveInData.selectedUnit || undefined}
           />
         )}
         
-        {currentStep === 3 && (
+        {currentStep === 3 && moveInData.selectedUnit && moveInData.tenantInfo && (
           <LeaseConfiguration
-            unit={moveInData.selectedUnit}
+            unit={{
+              unitNumber: moveInData.selectedUnit.unitNumber,
+              size: moveInData.selectedUnit.size,
+              price: moveInData.selectedUnit.basePrice || moveInData.selectedUnit.monthlyPrice || 0
+            }}
             tenantInfo={moveInData.tenantInfo}
             onLeaseConfigure={handleLeaseConfig}
             onNext={() => {}}
             onBack={handleBack}
           />
         )}
-        
-        {currentStep === 4 && (
+
+        {currentStep === 4 && moveInData.selectedUnit && moveInData.tenantInfo && moveInData.leaseConfig && (
           <PaymentProcessing
             tenantInfo={moveInData.tenantInfo}
-            unit={moveInData.selectedUnit}
-            leaseConfig={moveInData.leaseConfig}
-            pricing={{ totalDue: 150 }}
+            unit={{
+              unitNumber: moveInData.selectedUnit.unitNumber,
+              size: moveInData.selectedUnit.size,
+              price: moveInData.selectedUnit.basePrice || moveInData.selectedUnit.monthlyPrice || 0
+            }}
+            leaseConfig={{
+              leaseTerm: moveInData.leaseConfig.leaseTerm,
+              startDate: moveInData.leaseConfig.startDate,
+              billingCycle: moveInData.leaseConfig.billingCycle
+            }}
+            pricing={{ baseRate: 0, monthlyTotal: 0, totalDue: 150 }}
             onPaymentComplete={handlePaymentComplete}
             onBack={handleBack}
           />

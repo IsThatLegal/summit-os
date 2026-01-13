@@ -4,6 +4,9 @@ const config = {
   testMatch: ['**/tests/integration/**/*.test.ts'],
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
+  moduleNameMapper: {
+    '^@/(.*)$': '<rootDir>/$1',
+  },
   transform: {
     '^.+\\.(ts|tsx)$': [
       'ts-jest',

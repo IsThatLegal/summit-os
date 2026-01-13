@@ -11,7 +11,8 @@
     "test:e2e": "playwright test",
     "test:agent": "tsx scripts/test-enforcer.ts",
     "cleanup:tests": "./scripts/cleanup-tests.sh",
-    "cleanup:nuke": "curl -X DELETE http://localhost:3000/api/cleanup/scorched"
+    "cleanup:nuke": "curl -X DELETE http://localhost:3000/api/cleanup/scorched",
+    "deploy": "vercel --prod"
   },
   "dependencies": {
     "@langchain/core": "^1.1.0",

@@ -12,28 +12,30 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState<Theme>('light');
+  const [theme, setTheme] = useState<Theme>(() => {
+    // Only run this on client-side
+    if (typeof window === 'undefined') return 'light';
+
+    // Check for saved theme preference
+    const savedTheme = localStorage.getItem('theme') as Theme;
+    if (savedTheme) return savedTheme;
+
+    // Check for system preference
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  });
   const [mounted, setMounted] = useState(false);
 
+  // Set mounted flag on first render
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     setMounted(true);
-    // Check for saved theme preference or default to light mode
-    const savedTheme = localStorage.getItem('theme') as Theme;
-    if (savedTheme) {
-      setTheme(savedTheme);
-    } else {
-      // Check for system preference
-      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-      setTheme(systemTheme);
-    }
   }, []);
 
+  // Apply theme changes to DOM
   useEffect(() => {
-    // Apply theme to document and save to localStorage
-    if (mounted) {
-      document.documentElement.classList.toggle('dark', theme === 'dark');
-      localStorage.setItem('theme', theme);
-    }
+    if (!mounted) return;
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+    localStorage.setItem('theme', theme);
   }, [theme, mounted]);
 
   const toggleTheme = () => {

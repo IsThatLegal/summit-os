@@ -12,10 +12,10 @@ export interface AuthenticatedRequest extends NextRequest {
 export async function withAuth(
   request: NextRequest,
   requiredRole?: string[]
-): Promise<{ response: NextResponse | null; user?: any }> {
+): Promise<{ response: NextResponse | null; user?: { id: string; email?: string; role?: string } }> {
   try {
     const supabase = getSupabase();
-    
+
     // Get authorization header
     const authHeader = request.headers.get('authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -28,10 +28,10 @@ export async function withAuth(
     }
 
     const token = authHeader.substring(7);
-    
+
     // Verify JWT token with Supabase
     const { data: { user }, error } = await supabase.auth.getUser(token);
-    
+
     if (error || !user) {
       return {
         response: NextResponse.json(
@@ -42,13 +42,14 @@ export async function withAuth(
     }
 
     // Check role requirements if specified
+    let userRole: string | undefined;
     if (requiredRole && requiredRole.length > 0) {
       const { data: profile } = await supabase
         .from('user_profiles')
         .select('role')
         .eq('id', user.id)
         .single();
-      
+
       if (!profile || !requiredRole.includes(profile.role)) {
         return {
           response: NextResponse.json(
@@ -57,9 +58,10 @@ export async function withAuth(
           )
         };
       }
+      userRole = profile.role;
     }
 
-    return { response: null, user };
+    return { response: null, user: { id: user.id, email: user.email, role: userRole } };
     
   } catch (error) {
     console.error('Authentication error:', error);

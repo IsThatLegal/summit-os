@@ -1,4 +1,4 @@
-import { SiteLinkAPIClient, SiteLinkDataMapper, type SiteLinkConfig, type SiteLinkUnit, type SiteLinkTenant, type SiteLinkTransaction, type SiteLinkPayment } from './sitelink-client';
+import { SiteLinkAPIClient, SiteLinkDataMapper } from './sitelink-client';
 import { getSupabase } from './supabaseClient';
 
 export class SiteLinkIntegration {
@@ -246,7 +246,7 @@ export class SiteLinkIntegration {
   }
 
   // Push payments from SummitOS to SiteLink
-  async pushPaymentToSiteLink(paymentData: any): Promise<{ success: boolean; error?: string }> {
+  async pushPaymentToSiteLink(paymentData: Record<string, unknown>): Promise<{ success: boolean; error?: string }> {
     if (!this.isEnabled || !this.sitelinkClient) {
       return { success: false, error: 'SiteLink integration not configured' };
     }
@@ -346,7 +346,7 @@ export class SiteLinkIntegration {
   }
 
   // Get SiteLink site information
-  async getSiteInfo(): Promise<any> {
+  async getSiteInfo(): Promise<Record<string, unknown>> {
     if (!this.isEnabled || !this.sitelinkClient) {
       throw new Error('SiteLink integration not configured');
     }
@@ -355,7 +355,7 @@ export class SiteLinkIntegration {
   }
 
   // Test connection to SiteLink
-  async testConnection(): Promise<{ success: boolean; message: string; siteInfo?: any }> {
+  async testConnection(): Promise<{ success: boolean; message: string; siteInfo?: Record<string, unknown> }> {
     if (!this.isEnabled || !this.sitelinkClient) {
       return { 
         success: false, 

@@ -1,6 +1,6 @@
 'use client';
 
-import { Key, Car, XCircle, Trash2, Moon, Sun } from 'lucide-react';
+import { Key, Car, XCircle, Moon, Sun } from 'lucide-react';
 import { getSupabase } from '@/lib/supabaseClient';
 import React, { useState, useEffect, useCallback } from 'react';
 import { EnforcerModal } from '@/components/enforcer-modal';
@@ -91,8 +91,8 @@ export default function DashboardPage() {
       const { data: gateLogsData, error: gateLogsError } = await supabase.from('gate_logs').select(`*, tenants (first_name)`).order('timestamp', { ascending: false }).limit(3);
       if (gateLogsError) throw gateLogsError;
       setGateLogs(gateLogsData || []);
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch data.');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch data.');
     } finally {
       setLoading(false);
     }
@@ -125,10 +125,13 @@ export default function DashboardPage() {
     return actions[action] || <Key />;
   };
   
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>, setter: React.Dispatch<React.SetStateAction<any>>) => {
+  const handleChange = <T extends Record<string, unknown>>(
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+    setter: React.Dispatch<React.SetStateAction<T>>
+  ) => {
     const { name, value, type } = e.target;
     const checked = (e.target as HTMLInputElement).checked;
-    setter((prev: any) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
+    setter((prev: T) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
   };
 
   const handleAddTenantSubmit = async (e: React.FormEvent) => {
@@ -145,8 +148,8 @@ export default function DashboardPage() {
       if (!response.ok) throw new Error(data.error || 'Failed to add tenant');
       await Promise.all([fetchTenants(), fetchUnits()]);
       setNewTenant({ first_name: '', email: '', phone: '', gate_access_code: '', current_balance: '', is_locked_out: false, unit_id: '' });
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to add tenant');
     }
   };
 
@@ -160,8 +163,8 @@ export default function DashboardPage() {
       if (!response.ok) throw new Error(data.error || 'Failed to add unit');
       await fetchUnits();
       setNewUnit({ unit_number: '', size: '10x10', monthly_price: '100', status: 'available', door_type: 'roll-up' });
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to add unit');
     }
   };
 
@@ -176,8 +179,8 @@ export default function DashboardPage() {
       if (!response.ok) throw new Error(data.error || 'Failed to process payment');
       await fetchTenants();
       setNewPayment({ tenant_id: '', amount: '', description: '' });
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to process payment');
     }
   };
 
@@ -189,8 +192,8 @@ export default function DashboardPage() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Failed to delete tenant');
       await Promise.all([fetchTenants(), fetchUnits()]);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to delete tenant');
     }
   };
 

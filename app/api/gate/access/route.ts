@@ -63,15 +63,15 @@ export async function POST(request: NextRequest) {
     return addSecurityHeaders(NextResponse.json({ access: 'denied', reason: reason }, { status: 403 }));
   }
   
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Handle Zod validation errors
     if (error instanceof z.ZodError) {
-      return addSecurityHeaders(NextResponse.json({ 
-        error: 'Validation failed', 
-        details: error.issues 
+      return addSecurityHeaders(NextResponse.json({
+        error: 'Validation failed',
+        details: error.issues
       }, { status: 400 }));
     }
-    
+
     console.error('Gate access error:', error);
     return addSecurityHeaders(NextResponse.json({ error: 'Internal server error' }, { status: 500 }));
   }

@@ -47,8 +47,19 @@ export async function POST(request: NextRequest) {
     // Validate input using Zod schema
     const validatedData = chargeSchema.parse(body);
     const { tenant_id, amount_in_cents, description } = validatedData;
-    
+
     const supabase = getSupabase();
+
+    // Check if tenant exists
+    const { data: tenant, error: tenantError } = await supabase
+      .from('tenants')
+      .select('id')
+      .eq('id', tenant_id)
+      .single();
+
+    if (tenantError || !tenant) {
+      return addSecurityHeaders(NextResponse.json({ error: 'Tenant not found' }, { status: 404 }));
+    }
 
     // For testing, use a simpler approach that works with test mode
     const paymentIntent = await stripe.paymentIntents.create({
@@ -126,19 +137,18 @@ export async function POST(request: NextRequest) {
       return addSecurityHeaders(NextResponse.json({ error: 'Payment did not succeed.', status: paymentIntent.status }, { status: 400 }));
     }
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Handle Zod validation errors
     if (error instanceof z.ZodError) {
-      return addSecurityHeaders(NextResponse.json({ 
-        error: 'Validation failed', 
-        details: error.issues 
+      return addSecurityHeaders(NextResponse.json({
+        error: 'Validation failed',
+        details: error.issues
       }, { status: 400 }));
     }
-    
+
     console.error('Stripe API error:', error);
-    console.error('Stripe error type:', error.type);
-    console.error('Stripe error code:', error.code);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     // Return a generic error response
-    return addSecurityHeaders(NextResponse.json({ error: error.message }, { status: 500 }));
+    return addSecurityHeaders(NextResponse.json({ error: errorMessage }, { status: 500 }));
   }
 }

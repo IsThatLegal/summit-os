@@ -36,9 +36,9 @@ export default function GateSimulatorPage() {
         // Use the reason from the API response for the error state
         throw new Error(data.reason || 'Gate access request failed.');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error opening gate:', err);
-      setError(err.message || 'An unexpected error occurred.');
+      setError(err instanceof Error ? err.message : 'An unexpected error occurred.');
     } finally {
       setLoading(false);
     }

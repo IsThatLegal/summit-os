@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeAll, afterAll } from '@jest/globals';
+import { describe, test, expect } from '@jest/globals';
 
 // Mock the SiteLink client for testing
 jest.mock('../../lib/sitelink-client', () => ({

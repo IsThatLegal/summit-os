@@ -120,7 +120,7 @@ export async function DELETE(request: NextRequest) {
         const { error: unitResetError } = await supabase
           .from('units')
           .update({ status: 'available' })
-          .in('id', testUnits.map((u: any) => u.id));
+          .in('id', testUnits.map((u: { id: string }) => u.id));
 
         if (!unitResetError) {
           totalUnitsReset += testUnits.length;

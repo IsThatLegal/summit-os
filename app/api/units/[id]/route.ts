@@ -1,41 +1,39 @@
 import { NextResponse } from 'next/server';
 import { getSupabase } from '@/lib/supabaseClient';
 
-// PATCH unit by ID
-export async function PATCH(
+// Shared update logic for PATCH and PUT
+async function updateUnit(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  params: Promise<{ id: string }>
 ) {
   const { id } = await params;
   console.log('Updating unit with ID:', id);
   const supabase = getSupabase();
-  
+
   try {
     const body = await request.json();
     console.log('Update request body:', body);
-    
-    // Map frontend field names to database field names
-    const { 
-      unitNumber, 
-      size, 
-      basePrice, 
-      status, 
-      doorType,
-      width,
-      depth,
-      height,
-      x,
-      y,
-      rotation
-    } = body;
 
-    const updateData: any = {};
-    
+    // Support both camelCase (frontend) and snake_case (API/tests) field names
+    const unitNumber = body.unitNumber || body.unit_number;
+    const size = body.size;
+    const basePrice = body.basePrice || body.monthly_price;
+    const status = body.status;
+    const doorType = body.doorType || body.door_type;
+    const width = body.width;
+    const depth = body.depth;
+    const height = body.height;
+    const x = body.x;
+    const y = body.y;
+    const rotation = body.rotation;
+
+    const updateData: Record<string, string | number> = {};
+
     if (unitNumber !== undefined) updateData.unit_number = unitNumber;
     if (size !== undefined) updateData.size = size.toString();
     if (basePrice !== undefined) updateData.monthly_price = basePrice;
     if (status !== undefined) updateData.status = status;
-    if (doorType !== undefined) updateData.door_type = doorType === 'roll_up' ? 'roll-up' : 'swing';
+    if (doorType !== undefined) updateData.door_type = doorType === 'roll_up' || doorType === 'roll-up' ? 'roll-up' : 'swing';
     if (width !== undefined) updateData.width = width;
     if (depth !== undefined) updateData.depth = depth;
     if (height !== undefined) updateData.height = height;
@@ -44,6 +42,17 @@ export async function PATCH(
     if (rotation !== undefined) updateData.rotation = rotation;
 
     console.log('Update data for database:', updateData);
+
+    // Check if unit exists first
+    const { data: existingUnit, error: fetchError } = await supabase
+      .from('units')
+      .select('id')
+      .eq('id', id)
+      .single();
+
+    if (fetchError || !existingUnit) {
+      return NextResponse.json({ error: 'Unit not found' }, { status: 404 });
+    }
 
     const { data, error } = await supabase
       .from('units')
@@ -62,6 +71,22 @@ export async function PATCH(
     console.error('Unexpected error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
+}
+
+// PATCH unit by ID (partial update)
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  return updateUnit(request, params);
+}
+
+// PUT unit by ID (full update)
+export async function PUT(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  return updateUnit(request, params);
 }
 
 // DELETE unit by ID

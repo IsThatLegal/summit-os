@@ -1,4 +1,4 @@
-import { chromium, FullConfig } from '@playwright/test';
+import { chromium } from '@playwright/test';
 import dotenv from 'dotenv';
 import path from 'path';
 
@@ -26,24 +26,6 @@ async function globalSetup() {
   const context = await browser.newContext();
   await context.close();
   await browser.close();
-}
-
-async function globalTeardown() {
-  console.log('🏁 E2E tests completed - final cleanup...');
-  
-  try {
-    const response = await fetch('http://localhost:3000/api/cleanup/tests', {
-      method: 'DELETE'
-    });
-    if (!response.ok) {
-      console.warn('Failed to cleanup test data:', await response.text());
-    } else {
-      const result = await response.json();
-      console.log(`🧹 Final cleanup: ${result.tenantsDeleted} test tenants and ${result.unitsReset} units`);
-    }
-  } catch (error) {
-    console.warn('Error during final cleanup:', error);
-  }
 }
 
 export default globalSetup;

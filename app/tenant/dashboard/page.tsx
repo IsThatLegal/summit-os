@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { CreditCard, DollarSign, Home, LogOut, User, Clock, Moon, Sun } from 'lucide-react';
+import { CreditCard, DollarSign, Home, LogOut, Moon, Sun } from 'lucide-react';
 import { useTheme } from '@/components/theme-provider';
 
 interface Tenant {
@@ -28,13 +28,6 @@ export default function TenantDashboard() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState('credit_card');
-  const [showCheckForm, setShowCheckForm] = useState(false);
-  const [showMoneyOrderForm, setShowMoneyOrderForm] = useState(false);
-  const [showCashForm, setShowCashForm] = useState(false);
-  const [amount, setAmount] = useState('');
-  const [processing, setProcessing] = useState(false);
-  const [success, setSuccess] = useState(false);
   const router = useRouter();
   const { theme, toggleTheme } = useTheme();
 
@@ -72,98 +65,16 @@ export default function TenantDashboard() {
       const transactionsResponse = await fetch(`/api/tenants/${tenantId}/transactions`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      
+
       if (transactionsResponse.ok) {
         const transactionsData = await transactionsResponse.json();
         setTransactions(transactionsData || []);
       }
 
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch tenant data');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handlePayment = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!amount || parseFloat(amount) <= 0) {
-      setError('Please enter a valid payment amount');
-      return;
-    }
-
-    setProcessing(true);
-    setError(null);
-
-    try {
-      const token = localStorage.getItem('auth_token');
-      const userInfo = JSON.parse(localStorage.getItem('user_info') || '{}');
-      
-      let endpoint = '/api/tenant/payments';
-      let payload: any = {
-        tenant_id: userInfo.tenant_data?.id,
-        amount_in_cents: Math.round(parseFloat(amount) * 100),
-        description: `Online payment from ${userInfo.tenant_data?.first_name}`
-      };
-
-      if (paymentMethod === 'check') {
-        endpoint = '/api/payments/checks';
-        payload = {
-          ...payload,
-          check_number: (document.getElementById('check_number') as HTMLInputElement)?.value,
-          bank_name: (document.getElementById('bank_name') as HTMLInputElement)?.value,
-          routing_number: (document.getElementById('routing_number') as HTMLInputElement)?.value,
-          account_number: (document.getElementById('account_number') as HTMLInputElement)?.value
-        };
-      } else if (paymentMethod === 'money_order') {
-        endpoint = '/api/payments/money-orders';
-        payload = {
-          ...payload,
-          money_order_number: (document.getElementById('money_order_number') as HTMLInputElement)?.value,
-          issuing_organization: (document.getElementById('issuing_organization') as HTMLInputElement)?.value
-        };
-      } else if (paymentMethod === 'cash') {
-        endpoint = '/api/payments/cash';
-        payload = {
-          ...payload,
-          verification_method: (document.getElementById('verification_method') as HTMLSelectElement)?.value,
-          cash_drawer_id: (document.getElementById('cash_drawer_id') as HTMLInputElement)?.value,
-          receipt_number: (document.getElementById('receipt_number') as HTMLInputElement)?.value,
-          notes: (document.getElementById('cash_notes') as HTMLTextAreaElement)?.value
-        };
-      }
-      
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Payment failed');
-      }
-
-      setSuccess(true);
-      
-      setTimeout(() => {
-        fetchTenantData(token!, userInfo.tenant_data?.id);
-        setSuccess(false);
-        setAmount('');
-        setShowCheckForm(false);
-        setShowMoneyOrderForm(false);
-        setShowCashForm(false);
-      }, 3000);
-
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setProcessing(false);
     }
   };
 

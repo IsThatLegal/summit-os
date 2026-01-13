@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { CreditCard, ArrowLeft, CheckCircle, Wallet, FileText, Building2 } from 'lucide-react';
+import { CreditCard, ArrowLeft, CheckCircle } from 'lucide-react';
 
 interface Tenant {
   id: string;
@@ -13,17 +13,8 @@ interface Tenant {
   is_locked_out: boolean;
 }
 
-interface Transaction {
-  id: string;
-  type: 'payment' | 'charge';
-  amount: number;
-  description: string;
-  created_at: string;
-}
-
 export default function TenantPayments() {
   const [tenant, setTenant] = useState<Tenant | null>(null);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [paymentMethod, setPaymentMethod] = useState('credit_card');
@@ -66,17 +57,8 @@ export default function TenantPayments() {
       const tenantData = await response.json();
       setTenant(tenantData);
 
-      const transactionsResponse = await fetch(`/api/tenants/${tenantId}/transactions`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      
-      if (transactionsResponse.ok) {
-        const transactionsData = await transactionsResponse.json();
-        setTransactions(transactionsData || []);
-      }
-
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch tenant data');
     } finally {
       setLoading(false);
     }
@@ -98,7 +80,7 @@ export default function TenantPayments() {
       const userInfo = JSON.parse(localStorage.getItem('user_info') || '{}');
       
       let endpoint = '/api/tenant/payments';
-      let payload: any = {
+      let payload: Record<string, string | number | undefined> = {
         tenant_id: userInfo.tenant_data?.id,
         amount_in_cents: Math.round(parseFloat(amount) * 100),
         description: `Online payment from ${userInfo.tenant_data?.first_name}`
@@ -157,8 +139,8 @@ export default function TenantPayments() {
         setShowCashForm(false);
       }, 3000);
 
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Payment failed');
     } finally {
       setProcessing(false);
     }
@@ -472,7 +454,7 @@ export default function TenantPayments() {
                       />
                     </div>
                     <p className="mt-2 text-sm text-gray-500">
-                      Enter amount you'd like to pay today
+                      Enter amount you&apos;d like to pay today
                     </p>
                   </div>
 

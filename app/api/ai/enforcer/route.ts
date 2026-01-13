@@ -23,8 +23,9 @@ export async function POST(request: Request) {
       draftMessage: result.draftMessage,
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error processing tenant:', error);
-    return NextResponse.json({ error: 'Failed to run agent.', details: error.message }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json({ error: 'Failed to run agent.', details: errorMessage }, { status: 500 });
   }
 }

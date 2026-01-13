@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
         amount: amount_in_cents,
         description: description || `Cash payment received`,
         payment_status: 'completed', // Cash is immediate
-        processed_by: auth.user.email,
+        processed_by: auth.user?.email || 'unknown',
         notes: notes || `Cash payment via ${verification_method}`
       })
       .select()
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
       .insert({
         transaction_id: transaction.id,
         amount: amount_in_cents,
-        received_by: auth.user.email,
+        received_by: auth.user?.email || 'unknown',
         verification_method,
         cash_drawer_id,
         receipt_number,
@@ -131,18 +131,19 @@ export async function POST(request: NextRequest) {
       unlocked: (tenant.current_balance - amount_in_cents) <= 0
     }));
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Handle Zod validation errors
     if (error instanceof z.ZodError) {
-      return addSecurityHeaders(NextResponse.json({ 
-        error: 'Validation failed', 
-        details: error.issues 
+      return addSecurityHeaders(NextResponse.json({
+        error: 'Validation failed',
+        details: error.issues
       }, { status: 400 }));
     }
-    
+
     console.error('Cash payment processing error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Cash payment processing failed';
     return addSecurityHeaders(NextResponse.json(
-      { error: error.message || 'Cash payment processing failed' },
+      { error: errorMessage },
       { status: 500 }
     ));
   }

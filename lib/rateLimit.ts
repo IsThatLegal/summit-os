@@ -84,17 +84,18 @@ function getClientIdentifier(request: Request): string {
 // Predefined rate limit configurations
 export const rateLimits = {
   // Strict rate limiting for sensitive operations
-  auth: createRateLimit({ windowMs: 15 * 60 * 1000, maxRequests: 5 }), // 5 requests per 15 minutes
-  payments: createRateLimit({ windowMs: 60 * 1000, maxRequests: 10 }), // 10 requests per minute
-  
+  // Increased for development/testing - in production, set lower limits
+  auth: createRateLimit({ windowMs: 15 * 60 * 1000, maxRequests: 200 }), // 200 requests per 15 minutes
+  payments: createRateLimit({ windowMs: 60 * 1000, maxRequests: 200 }), // 200 requests per minute
+
   // Standard rate limiting for general API
-  standard: createRateLimit({ windowMs: 15 * 60 * 1000, maxRequests: 100 }), // 100 requests per 15 minutes
-  
+  standard: createRateLimit({ windowMs: 15 * 60 * 1000, maxRequests: 500 }), // 500 requests per 15 minutes
+
   // Lenient rate limiting for gate access (needs to be fast)
-  gateAccess: createRateLimit({ windowMs: 60 * 1000, maxRequests: 60 }), // 60 requests per minute
-  
+  gateAccess: createRateLimit({ windowMs: 60 * 1000, maxRequests: 500 }), // 500 requests per minute
+
   // Very strict for admin operations
-  admin: createRateLimit({ windowMs: 60 * 1000, maxRequests: 30 }), // 30 requests per minute
+  admin: createRateLimit({ windowMs: 60 * 1000, maxRequests: 200 }), // 200 requests per minute
 };
 
 // Cleanup function to prevent memory leaks

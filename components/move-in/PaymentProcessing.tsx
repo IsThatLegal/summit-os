@@ -14,22 +14,48 @@ interface PaymentDetails {
   setupAutoPay: boolean;
 }
 
+interface TenantInfo {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  gateAccessCode?: string;
+}
+
+interface Unit {
+  unitNumber: string;
+  size: number;
+  price: number;
+}
+
+interface LeaseConfig {
+  leaseTerm: number;
+  startDate: string;
+  billingCycle: string;
+}
+
+interface Pricing {
+  baseRate: number;
+  monthlyTotal: number;
+  totalDue: number;
+}
+
 interface PaymentProcessingProps {
-  tenantInfo: any;
-  unit: any;
-  leaseConfig: any;
-  pricing: any;
+  tenantInfo: TenantInfo;
+  unit: Unit;
+  leaseConfig: LeaseConfig;
+  pricing: Pricing;
   onPaymentComplete: (paymentDetails: PaymentDetails) => void;
   onBack: () => void;
 }
 
-export default function PaymentProcessing({ 
-  tenantInfo, 
-  unit, 
-  leaseConfig, 
-  pricing, 
-  onPaymentComplete, 
-  onBack 
+export default function PaymentProcessing({
+  tenantInfo,
+  unit,
+  leaseConfig,
+  pricing,
+  onPaymentComplete,
+  onBack
 }: PaymentProcessingProps) {
   const [paymentDetails, setPaymentDetails] = useState<PaymentDetails>({
     paymentMethod: 'card',
@@ -39,7 +65,10 @@ export default function PaymentProcessing({
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const handleInputChange = (field: keyof PaymentDetails, value: any) => {
+  const handleInputChange = <K extends keyof PaymentDetails>(
+    field: K,
+    value: PaymentDetails[K]
+  ) => {
     setPaymentDetails((prev: PaymentDetails) => ({ ...prev, [field]: value }));
   };
 

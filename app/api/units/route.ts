@@ -17,6 +17,7 @@ export async function GET() {
     }
 
     // Transform database data to match frontend interface
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const transformedData = data.map((unit: any, index: number) => ({
       id: unit.id,
       unitNumber: unit.unit_number,
@@ -47,30 +48,45 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     console.log('Received unit data:', body);
-    
-    const { 
-      unitNumber, 
-      width, 
-      depth, 
-      height, 
-      size, 
-      basePrice, 
-      status, 
-      doorType, 
-      type, 
-      x, 
-      y,
-      rotation
-    } = body;
 
-    // Map frontend field names to database field names
-    // Only use fields that exist in current database schema
+    // Support both camelCase (frontend) and snake_case (API/tests) field names
+    const unitNumber = body.unitNumber || body.unit_number;
+    const basePrice = body.basePrice || body.monthly_price;
+    const doorType = body.doorType || body.door_type;
+    const width = body.width;
+    const depth = body.depth;
+    const height = body.height;
+    const size = body.size;
+    const status = body.status;
+    const x = body.x;
+    const y = body.y;
+    const rotation = body.rotation;
+
+    // Validate door_type
+    const validDoorTypes = ['roll-up', 'roll_up', 'swing'];
+    if (doorType && !validDoorTypes.includes(doorType)) {
+      return NextResponse.json({
+        error: 'Invalid door_type. Must be one of: roll-up, swing',
+        received: doorType
+      }, { status: 400 });
+    }
+
+    // Validate status
+    const validStatuses = ['available', 'occupied', 'maintenance', 'reserved'];
+    if (status && !validStatuses.includes(status)) {
+      return NextResponse.json({
+        error: 'Invalid status. Must be one of: available, occupied, maintenance, reserved',
+        received: status
+      }, { status: 400 });
+    }
+
+    // Map to database field names
     const unitData = {
       unit_number: unitNumber,
       size: size ? size.toString() : (width && depth ? (width * depth).toString() : '100'),
-      monthly_price: basePrice || 150,
+      monthly_price: basePrice,
       status: status || 'available',
-      door_type: doorType === 'roll_up' ? 'roll-up' : 'swing',
+      door_type: doorType === 'roll_up' || doorType === 'roll-up' ? 'roll-up' : 'swing',
       rotation: rotation || 0,
       width: width || 10,
       depth: depth || 10,

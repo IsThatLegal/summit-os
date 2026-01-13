@@ -26,12 +26,12 @@ export async function DELETE() {
         sql: `DELETE FROM tenants WHERE id = ANY($1::uuid[])`,
         params: [stubbornIds]
       });
-      
+
       if (!rpcError) {
         console.log('✅ Raw SQL deletion successful');
         return NextResponse.json({ message: 'Scorched earth cleanup successful via SQL', deleted: stubbornIds.length });
       }
-    } catch (rpcError) {
+    } catch {
       console.log('RPC method failed, trying alternatives...');
     }
 

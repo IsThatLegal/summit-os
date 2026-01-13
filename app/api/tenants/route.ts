@@ -58,15 +58,15 @@ export async function POST(request: NextRequest) {
 
     return addSecurityHeaders(NextResponse.json(data[0], { status: 201 }));
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Handle Zod validation errors
     if (error instanceof z.ZodError) {
-      return addSecurityHeaders(NextResponse.json({ 
-        error: 'Validation failed', 
-        details: error.issues 
+      return addSecurityHeaders(NextResponse.json({
+        error: 'Validation failed',
+        details: error.issues
       }, { status: 400 }));
     }
-    
+
     console.error('Error creating tenant:', error);
     return addSecurityHeaders(NextResponse.json({ error: 'Internal server error' }, { status: 500 }));
   }
