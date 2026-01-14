@@ -254,10 +254,10 @@ export class SiteLinkIntegration {
     try {
       // Map to SiteLink format and process
       const sitelinkPayment = {
-        TenantID: paymentData.tenant_id,
-        Amount: paymentData.amount / 100, // Convert from cents
+        TenantID: paymentData.tenant_id as string,
+        Amount: (paymentData.amount as number) / 100, // Convert from cents
         Type: 'Payment',
-        Description: paymentData.description,
+        Description: paymentData.description as string,
         Date: new Date().toISOString(),
         PaymentMethod: (paymentData.payment_method as 'credit_card' | 'check' | 'money_order' | 'cash' | 'ach') || 'cash',
         Status: 'completed' as const,

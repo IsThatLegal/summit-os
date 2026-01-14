@@ -288,15 +288,15 @@ export class SiteLinkDataMapper {
 
   static mapSummitOSToSiteLink(summitOSUnit: Record<string, unknown>): Omit<SiteLinkUnit, 'UnitID'> {
     return {
-      UnitNumber: summitOSUnit.unit_number,
-      Width: summitOSUnit.width,
-      Depth: summitOSUnit.depth,
-      Height: summitOSUnit.height,
+      UnitNumber: summitOSUnit.unit_number as string,
+      Width: summitOSUnit.width as number,
+      Depth: summitOSUnit.depth as number,
+      Height: summitOSUnit.height as number,
       DoorType: summitOSUnit.door_type === 'roll-up' ? 'roll_up' : 'swing',
-      Status: summitOSUnit.status,
-      MonthlyPrice: summitOSUnit.monthly_price / 100, // Convert from cents
-      SquareFeet: summitOSUnit.width * summitOSUnit.depth,
-      UnitType: summitOSUnit.unit_type || 'standard',
+      Status: summitOSUnit.status as 'available' | 'occupied' | 'maintenance' | 'reserved',
+      MonthlyPrice: (summitOSUnit.monthly_price as number) / 100, // Convert from cents
+      SquareFeet: (summitOSUnit.width as number) * (summitOSUnit.depth as number),
+      UnitType: (summitOSUnit.unit_type as string) || 'standard',
       ClimateControlled: summitOSUnit.unit_type === 'climate',
     };
   }
@@ -316,19 +316,19 @@ export class SiteLinkDataMapper {
 
   static mapSummitOSToSiteLinkTenant(summitOSTenant: Record<string, unknown>): Omit<SiteLinkTenant, 'TenantID'> {
     return {
-      FirstName: summitOSTenant.first_name,
-      LastName: summitOSTenant.last_name || '',
-      Email: summitOSTenant.email,
-      Phone: summitOSTenant.phone,
-      CurrentBalance: summitOSTenant.current_balance / 100, // Convert from cents
-      GateCode: summitOSTenant.gate_access_code,
-      IsLockedOut: summitOSTenant.is_locked_out,
-      UnitID: summitOSTenant.unit_id,
-      MonthlyRent: summitOSTenant.monthly_rent || 0,
-      Address: summitOSTenant.address || '',
-      City: summitOSTenant.city || '',
-      State: summitOSTenant.state || '',
-      Zip: summitOSTenant.zip || '',
+      FirstName: summitOSTenant.first_name as string,
+      LastName: (summitOSTenant.last_name as string) || '',
+      Email: summitOSTenant.email as string,
+      Phone: summitOSTenant.phone as string,
+      CurrentBalance: (summitOSTenant.current_balance as number) / 100, // Convert from cents
+      GateCode: summitOSTenant.gate_access_code as string,
+      IsLockedOut: summitOSTenant.is_locked_out as boolean,
+      UnitID: summitOSTenant.unit_id as string,
+      MonthlyRent: (summitOSTenant.monthly_rent as number) || 0,
+      Address: (summitOSTenant.address as string) || '',
+      City: (summitOSTenant.city as string) || '',
+      State: (summitOSTenant.state as string) || '',
+      Zip: (summitOSTenant.zip as string) || '',
     };
   }
 
@@ -346,13 +346,13 @@ export class SiteLinkDataMapper {
 
   static mapSummitOSToSiteLinkTransaction(summitOSTransaction: Record<string, unknown>): Omit<SiteLinkTransaction, 'TransactionID'> {
     return {
-      TenantID: summitOSTransaction.tenant_id,
-      Amount: summitOSTransaction.amount / 100, // Convert from cents
-      Type: summitOSTransaction.type,
-      Description: summitOSTransaction.description,
-      Date: summitOSTransaction.created_at,
+      TenantID: summitOSTransaction.tenant_id as string,
+      Amount: (summitOSTransaction.amount as number) / 100, // Convert from cents
+      Type: summitOSTransaction.type as 'payment' | 'charge' | 'fee',
+      Description: summitOSTransaction.description as string,
+      Date: summitOSTransaction.created_at as string,
       PaymentMethod: (summitOSTransaction.payment_method as 'credit_card' | 'check' | 'money_order' | 'cash' | 'ach') || 'cash',
-      Status: summitOSTransaction.status,
+      Status: summitOSTransaction.status as 'pending' | 'completed' | 'failed',
     };
   }
 }

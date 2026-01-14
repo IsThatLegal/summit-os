@@ -199,7 +199,7 @@ export default function PaymentProcessing({
                   name="paymentMethod"
                   value="card"
                   checked={paymentDetails.paymentMethod === 'card'}
-                  onChange={(e) => handleInputChange('paymentMethod', e.target.value)}
+                  onChange={(e) => handleInputChange('paymentMethod', e.target.value as 'card' | 'bank' | 'crypto')}
                   className="sr-only"
                 />
                 <div className="text-lg">💳</div>
@@ -207,8 +207,8 @@ export default function PaymentProcessing({
               </label>
 
               <label className={`cursor-pointer p-4 border-2 rounded-lg text-center ${
-                paymentDetails.paymentMethod === 'bank' 
-                  ? 'border-blue-500 bg-blue-50' 
+                paymentDetails.paymentMethod === 'bank'
+                  ? 'border-blue-500 bg-blue-50'
                   : 'border-gray-300 hover:border-gray-400'
               }`}>
                 <input
@@ -216,7 +216,7 @@ export default function PaymentProcessing({
                   name="paymentMethod"
                   value="bank"
                   checked={paymentDetails.paymentMethod === 'bank'}
-                  onChange={(e) => handleInputChange('paymentMethod', e.target.value)}
+                  onChange={(e) => handleInputChange('paymentMethod', e.target.value as 'card' | 'bank' | 'crypto')}
                   className="sr-only"
                 />
                 <div className="text-lg">🏦</div>
@@ -224,8 +224,8 @@ export default function PaymentProcessing({
               </label>
 
               <label className={`cursor-pointer p-4 border-2 rounded-lg text-center ${
-                paymentDetails.paymentMethod === 'crypto' 
-                  ? 'border-blue-500 bg-blue-50' 
+                paymentDetails.paymentMethod === 'crypto'
+                  ? 'border-blue-500 bg-blue-50'
                   : 'border-gray-300 hover:border-gray-400'
               }`}>
                 <input
@@ -233,7 +233,7 @@ export default function PaymentProcessing({
                   name="paymentMethod"
                   value="crypto"
                   checked={paymentDetails.paymentMethod === 'crypto'}
-                  onChange={(e) => handleInputChange('paymentMethod', e.target.value)}
+                  onChange={(e) => handleInputChange('paymentMethod', e.target.value as 'card' | 'bank' | 'crypto')}
                   className="sr-only"
                 />
                 <div className="text-lg">₿</div>
