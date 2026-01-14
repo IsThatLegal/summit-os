@@ -45,7 +45,7 @@ Sentry.init({
       // Remove sensitive body data
       if (event.request.data && typeof event.request.data === 'object') {
         const sensitiveFields = ['password', 'token', 'secret', 'credit_card', 'cvv', 'ssn'];
-        const redactedData = { ...event.request.data };
+        const redactedData: Record<string, any> = { ...event.request.data };
 
         sensitiveFields.forEach(field => {
           if (field in redactedData) {
