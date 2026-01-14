@@ -3,6 +3,7 @@ import { getSupabase } from '@/lib/supabaseClient';
 import { withAuth } from '@/lib/auth';
 import { z } from 'zod';
 import { randomBytes, createHash } from 'crypto';
+import { authenticator } from 'otplib';
 
 // Validation schema
 const enrollSchema = z.object({
@@ -10,10 +11,9 @@ const enrollSchema = z.object({
   phone_number: z.string().optional(), // Required for SMS
 });
 
-// Generate TOTP secret (32 character base32 string)
+// Generate TOTP secret using otplib
 function generateTOTPSecret(): string {
-  const buffer = randomBytes(20);
-  return buffer.toString('base32').substring(0, 32);
+  return authenticator.generateSecret();
 }
 
 // Generate backup codes (8 codes, 12 characters each)

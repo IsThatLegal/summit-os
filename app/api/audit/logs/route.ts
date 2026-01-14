@@ -80,9 +80,11 @@ export async function GET(request: NextRequest) {
     }
 
     // Apply pagination
+    const offset = validatedParams.offset || 0;
+    const limit = validatedParams.limit || 100;
     query = query.range(
-      validatedParams.offset,
-      validatedParams.offset + validatedParams.limit - 1
+      offset,
+      offset + limit - 1
     );
 
     const { data: logs, error, count } = await query;
@@ -93,9 +95,9 @@ export async function GET(request: NextRequest) {
       logs: logs || [],
       pagination: {
         total: count || 0,
-        limit: validatedParams.limit,
-        offset: validatedParams.offset,
-        has_more: (count || 0) > validatedParams.offset + validatedParams.limit
+        limit,
+        offset,
+        has_more: (count || 0) > offset + limit
       }
     });
 

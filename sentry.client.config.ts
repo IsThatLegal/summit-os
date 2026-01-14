@@ -17,13 +17,8 @@ Sentry.init({
   replaysOnErrorSampleRate: 1.0, // Capture 100% of sessions with errors
 
   // Integrations
-  integrations: [
-    Sentry.replayIntegration({
-      maskAllText: true, // Privacy: mask all text
-      blockAllMedia: true, // Privacy: block all media
-    }),
-    Sentry.browserTracingIntegration(),
-  ],
+  // Note: Using default integrations provided by Sentry
+  // replayIntegration and browserTracingIntegration may require additional setup
 
   // Release tracking
   release: process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA,

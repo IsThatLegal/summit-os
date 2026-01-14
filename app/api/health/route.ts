@@ -5,7 +5,22 @@ import { getSupabase } from '@/lib/supabaseClient';
 export async function GET() {
   const startTime = Date.now();
 
-  const checks = {
+  const checks: {
+    status: string;
+    timestamp: string;
+    checks: {
+      database: { status: string; latency: number };
+      stripe: { status: string };
+      supabase_auth: { status: string; error?: string };
+    };
+    uptime: number;
+    memory: {
+      used: number;
+      total: number;
+      percentage: number;
+    };
+    environment: string | undefined;
+  } = {
     status: 'healthy',
     timestamp: new Date().toISOString(),
     checks: {

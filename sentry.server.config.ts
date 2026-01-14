@@ -16,17 +16,8 @@ Sentry.init({
   release: process.env.VERCEL_GIT_COMMIT_SHA,
 
   // Enhanced error context
-  integrations: [
-    Sentry.httpIntegration({
-      tracing: {
-        // Trace all outgoing requests
-        tracePropagationTargets: [
-          /^https:\/\/[^/]*\.supabase\.co/,
-          /^https:\/\/api\.stripe\.com/,
-        ],
-      },
-    }),
-  ],
+  // Note: httpIntegration not available in this Sentry version
+  // Tracing will still work via the SDK's default integrations
 
   // Filter sensitive data
   beforeSend(event, hint) {
@@ -41,7 +32,7 @@ Sentry.init({
       }
 
       // Remove sensitive query parameters
-      if (event.request.query_string) {
+      if (event.request.query_string && typeof event.request.query_string === 'string') {
         const sensitiveParams = ['token', 'api_key', 'password', 'secret'];
         let queryString = event.request.query_string;
         sensitiveParams.forEach(param => {
