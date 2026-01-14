@@ -7,9 +7,9 @@ dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
 
 async function globalSetup() {
   console.log('🚀 Starting E2E tests - cleaning up any existing test data...');
-  
+
   try {
-    const response = await fetch('http://localhost:3000/api/cleanup/tests', {
+    const response = await fetch('http://localhost:3000/api/test-cleanup', {
       method: 'DELETE'
     });
     if (!response.ok) {

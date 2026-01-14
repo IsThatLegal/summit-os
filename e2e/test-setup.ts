@@ -4,7 +4,7 @@ import { test as base, expect } from '@playwright/test';
 // Helper function to clean up test data
 async function cleanupTestData() {
   try {
-    const response = await fetch('http://localhost:3000/api/cleanup/tests', {
+    const response = await fetch('http://localhost:3000/api/test-cleanup', {
       method: 'DELETE'
     });
     if (!response.ok) {
