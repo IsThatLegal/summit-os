@@ -6,7 +6,8 @@ import {
   generateTestId,
 } from '../helpers/testUtils';
 
-const API_URL = 'http://localhost:3000/api/units';
+const API_PORT = process.env.API_PORT || 3000;
+const API_URL = `http://localhost:${API_PORT}/api/units`;
 
 describe('Unit Management API - Integration Tests', () => {
   beforeAll(async () => {

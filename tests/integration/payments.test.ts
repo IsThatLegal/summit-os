@@ -11,9 +11,10 @@ import {
 } from '../helpers/testAuth';
 import { getSupabase } from '@/lib/supabaseClient';
 
-const CHARGE_API_URL = 'http://localhost:3000/api/finance/charge';
-const CASH_API_URL = 'http://localhost:3000/api/payments/cash';
-const CHECK_API_URL = 'http://localhost:3000/api/payments/checks';
+const API_PORT = process.env.API_PORT || 3000;
+const CHARGE_API_URL = `http://localhost:${API_PORT}/api/finance/charge`;
+const CASH_API_URL = `http://localhost:${API_PORT}/api/payments/cash`;
+const CHECK_API_URL = `http://localhost:${API_PORT}/api/payments/checks`;
 
 describe('Payment Processing API - Integration Tests', () => {
   let testTenant: any;

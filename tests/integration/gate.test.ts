@@ -1,6 +1,7 @@
 import { supabase } from '../../lib/supabaseClient';
 
-const API_URL = 'http://localhost:3000/api/gate/access';
+const API_PORT = process.env.API_PORT || 3000;
+const API_URL = `http://localhost:${API_PORT}/api/gate/access`;
 
 describe('Gate Access API - Integration Test', () => {
 

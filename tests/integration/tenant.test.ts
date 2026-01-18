@@ -12,7 +12,8 @@ import {
   deleteTestAdminUser,
 } from '../helpers/testAuth';
 
-const API_URL = 'http://localhost:3000/api/tenants';
+const API_PORT = process.env.API_PORT || 3000;
+const API_URL = `http://localhost:${API_PORT}/api/tenants`;
 
 describe('Tenant Management API - Integration Tests', () => {
   let testTenantId: string;

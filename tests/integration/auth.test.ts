@@ -1,7 +1,8 @@
 import { describe, test, expect, beforeAll, afterAll } from '@jest/globals';
 import { cleanupAllTestData } from '../helpers/testUtils';
 
-const API_URL = 'http://localhost:3000/api/auth/login';
+const API_PORT = process.env.API_PORT || 3000;
+const API_URL = `http://localhost:${API_PORT}/api/auth/login`;
 
 describe('Authentication API - Integration Tests', () => {
   beforeAll(async () => {

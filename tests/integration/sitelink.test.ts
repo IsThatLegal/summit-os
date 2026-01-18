@@ -33,6 +33,9 @@ jest.mock('../../lib/sitelink-client', () => ({
   }))
 }));
 
+const API_PORT = process.env.API_PORT || 3000;
+const BASE_URL = `http://localhost:${API_PORT}/api/sitelink/sync`;
+
 describe('SiteLink Integration - Integration Test', () => {
   test('should handle missing SiteLink configuration gracefully', async () => {
     const { SiteLinkIntegration } = await import('../../lib/sitelink-integration');
@@ -54,7 +57,7 @@ describe('SiteLink Integration - Integration Test', () => {
   });
 
   test('should handle sync API endpoint without configuration', async () => {
-    const response = await fetch('http://localhost:3000/api/sitelink/sync', {
+    const response = await fetch(BASE_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'sync-units' }),
@@ -68,7 +71,7 @@ describe('SiteLink Integration - Integration Test', () => {
   });
 
   test('should validate SiteLink connection endpoint', async () => {
-    const response = await fetch('http://localhost:3000/api/sitelink/sync', {
+    const response = await fetch(BASE_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'test-connection' }),
