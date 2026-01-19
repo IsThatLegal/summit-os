@@ -5,6 +5,7 @@ import { getSupabase } from '@/lib/supabaseClient';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { EnforcerModal } from '@/components/enforcer-modal';
 import { useTheme } from '@/components/theme-provider';
+import { useRouter } from 'next/navigation';
 
 // Define types for better readability and type safety
 interface Unit {
@@ -51,11 +52,27 @@ async function authFetch(url: string, options: RequestInit = {}): Promise<Respon
 
 export default function DashboardPage() {
   const { theme, toggleTheme } = useTheme();
+  const router = useRouter();
   const [units, setUnits] = useState<Unit[]>([]);
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [gateLogs, setGateLogs] = useState<GateLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+
+  // Check authentication on mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      const supabase = getSupabase();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        router.push('/auth/login');
+      } else {
+        setIsAuthenticated(true);
+      }
+    };
+    checkAuth();
+  }, [router]);
 
   const [newTenant, setNewTenant] = useState({
     first_name: '',
@@ -213,6 +230,15 @@ export default function DashboardPage() {
   };
 
   if (loading) return <div className="p-8 text-center">Loading dashboard data...</div>;
+
+  // Don't render until auth check is complete
+  if (isAuthenticated === null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-gray-500">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className={`min-h-screen ${theme === 'dark' ? 'bg-gray-900 text-gray-100' : 'bg-gray-50 text-gray-900'}`}>
