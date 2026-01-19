@@ -56,12 +56,6 @@ export function createRateLimit(config: RateLimitConfig) {
     // Update rate limit data
     rateLimitStore.set(clientId, rateLimitData);
 
-    // Add rate limit headers to response
-    const response = NextResponse.next();
-    response.headers.set('X-RateLimit-Limit', maxRequests.toString());
-    response.headers.set('X-RateLimit-Remaining', (maxRequests - rateLimitData.count).toString());
-    response.headers.set('X-RateLimit-Reset', rateLimitData.resetTime.toString());
-
     return null; // Allow request
   };
 }

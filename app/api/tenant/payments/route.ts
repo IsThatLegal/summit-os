@@ -5,8 +5,14 @@ import { rateLimits } from '@/lib/rateLimit';
 import { z } from 'zod';
 import Stripe from 'stripe';
 
-// Initialize Stripe
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+// Initialize Stripe with secure environment variable handling
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+
+if (!stripeSecretKey) {
+  throw new Error('STRIPE_SECRET_KEY environment variable is not set');
+}
+
+const stripe = new Stripe(stripeSecretKey, {
   apiVersion: '2025-12-15.clover'
 });
 
@@ -57,20 +63,45 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Create a Stripe Payment Intent for actual payment processing
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: amount_in_cents,
-      currency: 'usd',
-      description: description,
-      automatic_payment_methods: {
-        enabled: true,
-        allow_redirects: 'never'
-      },
-      // In production, you'd handle client-side confirmation
-      // For now, we'll simulate successful payment
-      confirm: true,
-      payment_method: 'pm_card_visa', // Test card
-    });
+    // Check if we're in test mode (stripeSecretKey validated at module init)
+    const isTestMode = stripeSecretKey!.startsWith('sk_test_');
+
+    let paymentIntent;
+    if (isTestMode) {
+      // In test mode, auto-confirm with test card for easier development
+      paymentIntent = await stripe.paymentIntents.create({
+        amount: amount_in_cents,
+        currency: 'usd',
+        description: description,
+        confirm: true,
+        payment_method: 'pm_card_visa',
+        automatic_payment_methods: {
+          enabled: true,
+          allow_redirects: 'never'
+        }
+      });
+    } else {
+      // In production, create unconfirmed PaymentIntent
+      // Frontend must confirm with real payment method via Stripe.js
+      paymentIntent = await stripe.paymentIntents.create({
+        amount: amount_in_cents,
+        currency: 'usd',
+        description: description,
+        metadata: { tenant_id },
+        automatic_payment_methods: {
+          enabled: true
+        }
+      });
+
+      // Return client_secret for frontend to complete payment
+      if (paymentIntent.status === 'requires_payment_method') {
+        return addSecurityHeaders(NextResponse.json({
+          requires_action: true,
+          client_secret: paymentIntent.client_secret,
+          payment_intent_id: paymentIntent.id
+        }));
+      }
+    }
 
     if (paymentIntent.status !== 'succeeded') {
       return addSecurityHeaders(NextResponse.json(

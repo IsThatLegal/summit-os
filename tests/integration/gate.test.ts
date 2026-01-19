@@ -1,4 +1,6 @@
-import { supabase } from '../../lib/supabaseClient';
+import { getSupabase } from '../../lib/supabaseClient';
+
+const supabase = getSupabase();
 
 const API_PORT = process.env.API_PORT || 3000;
 const API_URL = `http://localhost:${API_PORT}/api/gate/access`;

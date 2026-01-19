@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
     if (isLockedOut) {
       reason = 'Account locked. Please contact management.';
     } else if (!isBalanceClear) {
-      reason = `Access denied due to outstanding balance of $${tenant.current_balance}.`;
+      reason = `Access denied due to outstanding balance of $${(tenant.current_balance / 100).toFixed(2)}.`;
     }
     
     return addSecurityHeaders(NextResponse.json({ access: 'denied', reason: reason }, { status: 403 }));

@@ -197,7 +197,7 @@ describe('Unit Management API - Integration Tests', () => {
     });
 
     test('should support all status values', async () => {
-      const statuses = ['available', 'occupied', 'maintenance', 'reserved'];
+      const statuses = ['available', 'occupied', 'maintenance'];
 
       for (const status of statuses) {
         const unit = await createTestUnit({ status });

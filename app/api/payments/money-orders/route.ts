@@ -57,10 +57,37 @@ export async function POST(request: NextRequest) {
       ));
     }
 
-    // Create money order payment record
+    // Create transaction record first (so we have the ID for linking)
+    // Note: Using 0 amount for pending money orders - balance updated when verified
+    const { data: transaction, error: transactionError } = await supabase
+      .from('transactions')
+      .insert({
+        tenant_id,
+        type: 'payment',
+        amount: 0, // Don't affect balance until money order is verified
+        description: description || `Money order #${money_order_number}`,
+        payment_method_id: null,
+        payment_status: 'pending',
+        reference_number: money_order_number,
+        processed_by: auth.user?.email || 'unknown',
+        notes: `Money order from ${issuing_organization} - Amount: $${(amount_in_cents / 100).toFixed(2)} (pending)`
+      })
+      .select()
+      .single();
+
+    if (transactionError) {
+      console.error('Error creating transaction:', transactionError);
+      return addSecurityHeaders(NextResponse.json(
+        { error: 'Failed to create transaction record' },
+        { status: 500 }
+      ));
+    }
+
+    // Create money order payment record linked to transaction
     const { data: moneyOrderPayment, error: moneyOrderError } = await supabase
       .from('money_order_payments')
       .insert({
+        transaction_id: transaction.id,
         money_order_number,
         issuing_organization,
         amount: amount_in_cents,
@@ -79,35 +106,11 @@ export async function POST(request: NextRequest) {
       ));
     }
 
-    // Create transaction record
-    const { data: transaction, error: transactionError } = await supabase
-      .from('transactions')
-      .insert({
-        tenant_id,
-        type: 'payment',
-        amount: amount_in_cents,
-        description: description || `Money order #${money_order_number}`,
-        payment_method_id: null, // Will be linked when verified
-        payment_status: 'pending',
-        reference_number: money_order_number,
-        processed_by: auth.user?.email || 'unknown',
-        notes: `Money order from ${issuing_organization}`
-      })
-      .select()
-      .single();
-
-    if (transactionError) {
-      console.error('Error creating transaction:', transactionError);
-      return addSecurityHeaders(NextResponse.json(
-        { error: 'Failed to create transaction record' },
-        { status: 500 }
-      ));
-    }
-
     return addSecurityHeaders(NextResponse.json({
       message: 'Money order submitted for verification',
       transaction: transaction,
       money_order_payment: moneyOrderPayment,
+      pending_amount: amount_in_cents,
       next_steps: [
         'Money order will be verified within 1-3 business days',
         'You will receive notification when verification is complete',

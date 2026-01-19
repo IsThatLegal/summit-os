@@ -61,18 +61,45 @@ export async function POST(request: NextRequest) {
       return addSecurityHeaders(NextResponse.json({ error: 'Tenant not found' }, { status: 404 }));
     }
 
-    // For testing, use a simpler approach that works with test mode
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: amount_in_cents,
-      currency: 'usd',
-      confirm: true,
-      payment_method: 'pm_card_visa',
-      description: `Test payment for tenant ${tenant_id}: ${description}`,
-      automatic_payment_methods: {
-        enabled: true,
-        allow_redirects: 'never'
+    // Check if we're in test mode (stripeSecretKey validated at module init)
+    const isTestMode = stripeSecretKey!.startsWith('sk_test_');
+
+    let paymentIntent;
+    if (isTestMode) {
+      // In test mode, auto-confirm with test card for easier development
+      paymentIntent = await stripe.paymentIntents.create({
+        amount: amount_in_cents,
+        currency: 'usd',
+        confirm: true,
+        payment_method: 'pm_card_visa',
+        description: `Payment for tenant ${tenant_id}: ${description}`,
+        automatic_payment_methods: {
+          enabled: true,
+          allow_redirects: 'never'
+        }
+      });
+    } else {
+      // In production, create unconfirmed PaymentIntent
+      // Frontend must confirm with real payment method via Stripe.js
+      paymentIntent = await stripe.paymentIntents.create({
+        amount: amount_in_cents,
+        currency: 'usd',
+        description: `Payment for tenant ${tenant_id}: ${description}`,
+        metadata: { tenant_id },
+        automatic_payment_methods: {
+          enabled: true
+        }
+      });
+
+      // Return client_secret for frontend to complete payment
+      if (paymentIntent.status === 'requires_payment_method') {
+        return addSecurityHeaders(NextResponse.json({
+          requires_action: true,
+          client_secret: paymentIntent.client_secret,
+          payment_intent_id: paymentIntent.id
+        }));
       }
-    });
+    }
 
     // Check if payment was successful
     if (paymentIntent.status === 'succeeded') {

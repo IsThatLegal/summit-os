@@ -60,12 +60,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Create transaction record first
+    // Amount must be NEGATIVE for payments (trigger adds this to balance)
+    const transactionAmount = -Math.abs(amount_in_cents);
+
     const { data: transaction, error: transactionError } = await supabase
       .from('transactions')
       .insert({
         tenant_id,
         type: 'payment',
-        amount: amount_in_cents,
+        amount: transactionAmount,
         description: description || `Cash payment received`,
         payment_status: 'completed', // Cash is immediate
         processed_by: auth.user?.email || 'unknown',
@@ -106,29 +109,34 @@ export async function POST(request: NextRequest) {
       ));
     }
 
-    // Update tenant balance (trigger will handle this automatically)
-    const { error: updateError } = await supabase
+    // Trigger already updated the balance, fetch updated tenant data
+    const { data: updatedTenant } = await supabase
       .from('tenants')
-      .update({
-        current_balance: tenant.current_balance - amount_in_cents,
-        is_locked_out: (tenant.current_balance - amount_in_cents) > 0
-      })
-      .eq('id', tenant_id);
+      .select('current_balance')
+      .eq('id', tenant_id)
+      .single();
 
-    if (updateError) {
-      console.error(`Error updating tenant ${tenant_id}:`, updateError);
-      return addSecurityHeaders(NextResponse.json(
-        { error: 'Failed to update tenant balance' },
-        { status: 500 }
-      ));
+    const newBalance = updatedTenant?.current_balance ?? 0;
+
+    // Auto-unlock if balance is now clear
+    let unlocked = false;
+    if (newBalance <= 0) {
+      const { error: unlockError } = await supabase
+        .from('tenants')
+        .update({ is_locked_out: false })
+        .eq('id', tenant_id);
+
+      if (!unlockError) {
+        unlocked = true;
+      }
     }
 
     return addSecurityHeaders(NextResponse.json({
       message: 'Cash payment recorded successfully',
       transaction: transaction,
       cash_payment: cashPayment,
-      new_balance: tenant.current_balance - amount_in_cents,
-      unlocked: (tenant.current_balance - amount_in_cents) <= 0
+      new_balance: newBalance,
+      unlocked: unlocked
     }));
 
   } catch (error: unknown) {
@@ -173,11 +181,11 @@ export async function GET(request: NextRequest) {
           tenant_id,
           amount,
           description,
-          created_at
-        ),
-        tenants!inner(
-          first_name,
-          email
+          created_at,
+          tenants!inner(
+            first_name,
+            email
+          )
         )
       `)
       .order('created_at', { ascending: false })

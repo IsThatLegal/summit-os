@@ -5,7 +5,8 @@ import 'dotenv/config';
 
 async function main() {
   // Dynamically import the modules after env vars are loaded
-  const { supabase } = await import('../lib/supabaseClient');
+  const { getSupabase } = await import('../lib/supabaseClient');
+  const supabase = getSupabase();
   const { default: enforcerAgent } = await import('../lib/agents/enforcer/graph');
 
   console.log("--- Starting Enforcer Agent Test ---");

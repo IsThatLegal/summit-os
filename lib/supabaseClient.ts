@@ -21,5 +21,5 @@ export function getSupabase() {
   return supabaseInstance;
 }
 
-// Export a singleton instance for backward compatibility
-export const supabase = getSupabase();
+// Note: Use getSupabase() instead of direct import to avoid build-time errors
+// when environment variables are not available during static analysis

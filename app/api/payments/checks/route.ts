@@ -61,10 +61,37 @@ export async function POST(request: NextRequest) {
       ));
     }
 
-    // Create check payment record
+    // Create transaction record first (so we have the ID for linking)
+    // Note: Using 0 amount for pending checks - balance updated when check clears
+    const { data: transaction, error: transactionError } = await supabase
+      .from('transactions')
+      .insert({
+        tenant_id,
+        type: 'payment',
+        amount: 0, // Don't affect balance until check clears
+        description: description || `Check payment #${check_number}`,
+        payment_method_id: null,
+        payment_status: 'pending',
+        reference_number: check_number,
+        processed_by: auth.user?.email || 'unknown',
+        notes: `Check payment via ${bank_name} - Amount: $${(amount_in_cents / 100).toFixed(2)} (pending)`
+      })
+      .select()
+      .single();
+
+    if (transactionError) {
+      console.error('Error creating transaction:', transactionError);
+      return addSecurityHeaders(NextResponse.json(
+        { error: 'Failed to create transaction record' },
+        { status: 500 }
+      ));
+    }
+
+    // Create check payment record linked to transaction
     const { data: checkPayment, error: checkError } = await supabase
       .from('check_payments')
       .insert({
+        transaction_id: transaction.id,
         check_number,
         bank_name,
         routing_number,
@@ -84,35 +111,11 @@ export async function POST(request: NextRequest) {
       ));
     }
 
-    // Create transaction record
-    const { data: transaction, error: transactionError } = await supabase
-      .from('transactions')
-      .insert({
-        tenant_id,
-        type: 'payment',
-        amount: amount_in_cents,
-        description: description || `Check payment #${check_number}`,
-        payment_method_id: null, // Will be linked when check clears
-        payment_status: 'pending',
-        reference_number: check_number,
-        processed_by: auth.user?.email || 'unknown',
-        notes: `Check payment via ${bank_name}`
-      })
-      .select()
-      .single();
-
-    if (transactionError) {
-      console.error('Error creating transaction:', transactionError);
-      return addSecurityHeaders(NextResponse.json(
-        { error: 'Failed to create transaction record' },
-        { status: 500 }
-      ));
-    }
-
     return addSecurityHeaders(NextResponse.json({
       message: 'Check payment submitted for processing',
       transaction: transaction,
       check_payment: checkPayment,
+      pending_amount: amount_in_cents,
       next_steps: [
         'Check will be verified within 1-2 business days',
         'Tenant account will be updated when check clears',
