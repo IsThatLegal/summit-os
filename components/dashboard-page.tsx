@@ -2,7 +2,7 @@
 
 import { Key, Car, XCircle, Moon, Sun } from 'lucide-react';
 import { getSupabase } from '@/lib/supabaseClient';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { EnforcerModal } from '@/components/enforcer-modal';
 import { useTheme } from '@/components/theme-provider';
 
@@ -32,6 +32,21 @@ interface GateLog {
   action: 'entry' | 'exit' | 'denied_payment' | 'entry_granted' | 'entry_denied';
   timestamp: string;
   tenants?: { first_name: string };
+}
+
+// Helper to make authenticated API requests
+async function authFetch(url: string, options: RequestInit = {}): Promise<Response> {
+  const supabase = getSupabase();
+  const { data: { session } } = await supabase.auth.getSession();
+
+  const headers = new Headers(options.headers);
+  headers.set('Content-Type', 'application/json');
+
+  if (session?.access_token) {
+    headers.set('Authorization', `Bearer ${session.access_token}`);
+  }
+
+  return fetch(url, { ...options, headers });
 }
 
 export default function DashboardPage() {
@@ -143,7 +158,7 @@ export default function DashboardPage() {
         unit_id: newTenant.unit_id || null,
         current_balance: Math.round(parseFloat(newTenant.current_balance || '0') * 100),
       };
-      const response = await fetch('/api/tenants', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      const response = await authFetch('/api/tenants', { method: 'POST', body: JSON.stringify(payload) });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Failed to add tenant');
       await Promise.all([fetchTenants(), fetchUnits()]);
@@ -158,7 +173,7 @@ export default function DashboardPage() {
     setError(null);
     try {
       const payload = { ...newUnit, monthly_price: Math.round(parseFloat(newUnit.monthly_price || '0') * 100) };
-      const response = await fetch('/api/units', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      const response = await authFetch('/api/units', { method: 'POST', body: JSON.stringify(payload) });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Failed to add unit');
       await fetchUnits();
@@ -174,7 +189,7 @@ export default function DashboardPage() {
     setError(null);
     try {
       const payload = { ...newPayment, amount_in_cents: Math.round(parseFloat(newPayment.amount || '0') * 100) };
-      const response = await fetch('/api/finance/charge', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      const response = await authFetch('/api/finance/charge', { method: 'POST', body: JSON.stringify(payload) });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Failed to process payment');
       await fetchTenants();
@@ -188,7 +203,7 @@ export default function DashboardPage() {
     if (!window.confirm("Are you sure you want to delete this tenant? This will also remove their gate logs and transactions.")) return;
     setError(null);
     try {
-      const response = await fetch(`/api/tenants/${tenantId}`, { method: 'DELETE' });
+      const response = await authFetch(`/api/tenants/${tenantId}`, { method: 'DELETE' });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Failed to delete tenant');
       await Promise.all([fetchTenants(), fetchUnits()]);
